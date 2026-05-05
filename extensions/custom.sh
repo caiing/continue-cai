@@ -15,7 +15,7 @@ else
   xsed='sed -i'
 fi  
 echo "########## custom llmserv llm provider ########## "
-cp ${baseDir}/../core/llm/llms/Ollama.ts ${baseDir}/../core/llm/llms/llmserv.ts
+cp ${baseDir}/../core/llm/llms/Ollama.ts ${baseDir}/../core/llm/llms/Llmserv.ts
 $sed 's#providerName = "ollama"#providerName = "llmserv"#g' ${baseDir}/../core/llm/llms/llmserv.ts
 $sed 's#LlamaStack#Llmserv#g' ${baseDir}/../core/llm/llms/index.ts
 
