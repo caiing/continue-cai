@@ -38,7 +38,7 @@ $xsed 's#View Logs#查看日志#g' ${baseDir}/../gui/src/pages/gui/StreamError.t
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/env.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../core/util/paths.ts
 $xsed 's#".continue/"#".cowork/"#g' ${baseDir}/../core/config/workspace/workspaceBlocks.ts
-$xsed 's#.continue/#".cowork/#g' ${baseDir}/../core/config/workspace/workspaceBlocks.ts
+$xsed 's#.continue/#.cowork/#g' ${baseDir}/../core/config/workspace/workspaceBlocks.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/hooks/hookConfig.ts
 find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue")/".cowork")/g' {} +
 find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue"/".cowork"/g' {} +
