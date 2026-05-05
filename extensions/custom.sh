@@ -13,10 +13,17 @@ if [ "$system" == "Darwin" ]; then
 else
   echo "This is Linux"
   xsed='sed -i'
-fi
+fi  
 
 echo "########## custom replace begin ########## "
 echo ".continue custom"
+$xsed 's#"AI",#"人工智能",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Chat",#"语言模型",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Programming Languages",#"智能研发",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Education",#"智能体",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Programming Languages",#"规格编程",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Snippets"#"编码辅助"#g' ${baseDir}/../extensions/vscode/package.json
+
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/env.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../core/util/paths.ts
 $xsed 's#".continue/"#".cowork/"#g' ${baseDir}/../core/config/workspace/workspaceBlocks.ts
