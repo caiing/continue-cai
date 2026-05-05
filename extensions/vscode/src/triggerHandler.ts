@@ -3,7 +3,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-export type TriggerEventType = "session_start" | "session_end";
+export type TriggerEventType =
+  | "session_start"
+  | "session_end"
+  | "message_send"
+  | "message_end";
 
 function getContinueGlobalDir(): string {
   return (
@@ -20,7 +24,11 @@ export async function runTriggerScript(
     const scriptName =
       eventType === "session_start"
         ? "session_start_trigger"
-        : "session_end_trigger";
+        : eventType === "session_end"
+          ? "session_end_trigger"
+          : eventType === "message_send"
+            ? "message_send_trigger"
+            : "message_end_trigger";
     const triggerTsPath = path.join(globalDir, `${scriptName}.ts`);
     const triggerJsPath = path.join(globalDir, `${scriptName}.js`);
 

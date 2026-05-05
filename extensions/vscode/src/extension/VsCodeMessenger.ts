@@ -108,13 +108,15 @@ export class VsCodeMessenger {
       console.log(
         `[Continue] Message sent: ${messageId} at ${new Date(timestamp).toISOString()}${content ? ` (${content.length} chars)` : ""}`,
       );
+      void runTriggerScript("message_send", messageId);
     });
 
     this.onWebview("message/end", (msg) => {
-      const { messageId, timestamp, duration } = msg.data;
+      const { messageId, timestamp, duration = 0 } = msg.data;
       console.log(
         `[Continue] Message ended: ${messageId} at ${new Date(timestamp).toISOString()} (duration: ${(duration / 1000).toFixed(2)}s)`,
       );
+      void runTriggerScript("message_end", messageId);
     });
 
     this.onWebview("showFile", (msg) => {
