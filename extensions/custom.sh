@@ -137,7 +137,7 @@ $xsed 's#return <OnboardingModelsAddOnTab />;#return <OnboardingLocalTab />;#g' 
 
 $xsed 's#to toggle config#切换配置#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#Screen width too small#屏幕宽度太小#g' ${baseDir}/../gui/src/pages/config/index.tsx
-$xsed 's#To view settings, please expand the sidebar by dragging the#查看设置, 请通过拖动侧边栏的。#g' ${baseDir}/../gui/src/pages/config/index.tsx
+$xsed 's#To view settings, please expand the sidebar by dragging the#为查看设置, 请通过拖动侧边栏的#g' ${baseDir}/../gui/src/pages/config/index.tsx
 $xsed 's# left/right border#左/右边界#g' ${baseDir}/../gui/src/pages/config/index.tsx
 
 # 简化 session 按钮的文本
@@ -589,6 +589,8 @@ $xsed 's/Previous Conversation Compacted/之前的对话已压缩/g' ${baseDir}/
 # 翻译 FeedbackButtons.tsx 文件
 $xsed 's/text="Helpful"/text="有帮助"/g' ${baseDir}/../gui/src/components/FeedbackButtons.tsx
 $xsed 's/text="Unhelpful"/text="无帮助"/g' ${baseDir}/../gui/src/components/FeedbackButtons.tsx
+$xsed 's/"Copy"/"复制"/g' ${baseDir}/../gui/src/components/gui/CopyIconButton.tsx
+$xsed 's/"Copied"/"已复制"/g' ${baseDir}/../gui/src/components/gui/CopyIconButton.tsx
 
 # 翻译 IndexingProgressTitleText.tsx 文件
 $xsed 's/"Indexing complete"/"索引完成"/g' ${baseDir}/../gui/src/pages/config/features/indexing/IndexingProgressTitleText.tsx
@@ -634,7 +636,15 @@ $xsed 's/  Ask First/  先询问/g' ${baseDir}/../gui/src/pages/config/component
 $xsed 's/"Ask First"/"先询问"/g' ${baseDir}/../extensions/vscode/e2e/actions/GUI.actions.ts
 $xsed 's/"Automatic"/"自动"/g' ${baseDir}/../extensions/vscode/e2e/actions/GUI.actions.ts
 $xsed 's/"Excluded"/"排除"/g' ${baseDir}/../extensions/vscode/e2e/actions/GUI.actions.ts
-
+$xsed 's/ for /了/g' ${baseDir}/../gui/src/components/mainInput/belowMainInput/ThinkingBlockPeek.tsx
+$xsed 's/"Thought"/"思考"/g' ${baseDir}/../gui/src/components/mainInput/belowMainInput/ThinkingBlockPeek.tsx
+$xsed 's/"Redacted Thinking" : "Thinking"/"脱敏推理过程" : "思考中"/g' ${baseDir}/../gui/src/components/mainInput/belowMainInput/ThinkingBlockPeek.tsx
+$xsed 's/"Generating"/"生成中"/g' ${baseDir}/../gui/src/pages/gui/ToolCallDiv/utils.tsx
+$xsed 's/"Generating"/"生成中"/g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/GeneratingIndicator.tsx
+$xsed 's/"Trim chat to this message"/"截断聊天记录到此消息"/g' ${baseDir}/../gui/src/pages/gui/ToolCallDiv/ToolTruncateHistoryIcon.tsx
+$xsed 's/⌫ Cancel/⌫ 取消/g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/IsApplyingToolbar.tsx
+$xsed 's#<span>Accept</span>#<span>接受</span>#g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/PendingToolCallToolbar.tsx
+$xsed 's#<span>Reject</span>#<span>拒绝</span>#g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/PendingToolCallToolbar.tsx
 
 $xsed 's/Tool disabled in chat mode/工具在聊天模式下禁用/g' ${baseDir}/../gui/src/pages/config/components/ToolPolicyItem.tsx
 $xsed 's/Group is turned off/组已关闭/g' ${baseDir}/../gui/src/pages/config/components/ToolPolicyItem.tsx
