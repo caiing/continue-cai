@@ -25,7 +25,7 @@ $xsed 's#"AI",#"人工智能",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Chat",#"语言模型",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Programming Languages",#"智能研发",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Education",#"智能体",#g' ${baseDir}/../extensions/vscode/package.json
-$xsed 's#"Programming Languages",#"规格编程",#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#"Machine Learning",#"规格编程",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Snippets"#"编码辅助"#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#Error handling model response#模型响应错误#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
 $xsed 's#There was an error handling the response from#响应时发生错误来自#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
@@ -622,6 +622,9 @@ $xsed 's/"Indexing disabled"/"索引已禁用"/g' ${baseDir}/../gui/src/pages/co
 $xsed 's/"Indexing cancelled"/"索引已取消"/g' ${baseDir}/../gui/src/pages/config/features/indexing/IndexingProgressTitleText.tsx
 
 $xsed 's/Review and edit your generated rule below/查看并编辑生成的规则/g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
+$xsed 's/Enter rule name.../输入规则名称.../g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
+$xsed 's/Description of the task this rule is helpful for.../此规则的任务描述.../g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
+$xsed 's/Your rule content.../您的规则内容.../g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
 $xsed 's/Your rule/您的规则/g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
 $xsed 's/Rule Name/规则名称/g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
 $xsed 's/Rule Type/规则类型/g' ${baseDir}/../gui/src/components/GenerateRuleDialog/GenerationScreen.tsx
@@ -664,6 +667,7 @@ $xsed 's/"Trim chat to this message"/"截断聊天记录到此消息"/g' ${baseD
 $xsed 's/⌫ Cancel/⌫ 取消/g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/IsApplyingToolbar.tsx
 $xsed 's#<span>Accept</span>#<span>接受</span>#g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/PendingToolCallToolbar.tsx
 $xsed 's#<span>Reject</span>#<span>拒绝</span>#g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/PendingToolCallToolbar.tsx
+$xsed 's#displayText = "Stop"#displayText = "停止"#g' ${baseDir}/../gui/src/components/mainInput/Lump/LumpToolbar/StreamingToolbar.tsx
 
 $xsed 's/Tool disabled in chat mode/工具在聊天模式下禁用/g' ${baseDir}/../gui/src/pages/config/components/ToolPolicyItem.tsx
 $xsed 's/Group is turned off/组已关闭/g' ${baseDir}/../gui/src/pages/config/components/ToolPolicyItem.tsx
