@@ -23,6 +23,13 @@ $xsed 's#"Programming Languages",#"智能研发",#g' ${baseDir}/../extensions/vs
 $xsed 's#"Education",#"智能体",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Programming Languages",#"规格编程",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"Snippets"#"编码辅助"#g' ${baseDir}/../extensions/vscode/package.json
+$xsed 's#Error handling model response#模型响应错误#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#There was an error handling the response from#响应时发生错误来自#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#Please try to submit your message again.#请稍后重试#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#Resubmit last message#重新提交最后一条消息#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#"View error output"#"查看错误输出"#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#Copy output#复制输出#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
+$xsed 's#View Logs#查看日志#g' ${baseDir}/../gui/src/pages/gui/StreamError.tsx
 
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/env.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../core/util/paths.ts
