@@ -1,3 +1,4 @@
+import os from "os";
 import * as URI from "uri-js";
 
 /** Converts any OS path to cleaned up URI path segment format with no leading/trailing slashes
