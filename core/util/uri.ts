@@ -55,10 +55,21 @@ export function findUriInDirs(
     if (uriPathParts.length < dirPathParts.length) {
       continue;
     }
+    const isWindows = os.platform() === "win32";
     let allDirPartsMatch = true;
     for (let i = 0; i < dirPathParts.length; i++) {
-      if (dirPathParts[i] !== uriPathParts[i]) {
-        allDirPartsMatch = false;
+      const dirPart = dirPathParts[i];
+      const uriPart = uriPathParts[i];
+      if (isWindows) {
+        if (dirPart.toLowerCase() !== uriPart.toLowerCase()) {
+          allDirPartsMatch = false;
+          break;
+        }
+      } else {
+        if (dirPart !== uriPart) {
+          allDirPartsMatch = false;
+          break;
+        }
       }
     }
     if (allDirPartsMatch) {
