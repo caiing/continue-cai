@@ -121,4 +121,45 @@ $xsed 's#<Text bold>Config:</Text>#<Text bold>配置：</Text>#g' ${baseDir}/cli
 $xsed 's#<Text bold>Model:</Text>#<Text bold>模型：</Text>#g' ${baseDir}/cli/src/ui/IntroMessage.tsx
 $xsed 's#<Text color="dim">Loading...</Text>#<Text color="dim">加载中...</Text>#g' ${baseDir}/cli/src/ui/IntroMessage.tsx
 
+# 翻译 commands.ts 文件
+echo "Translating commands.ts..."
+
+# 系统斜杠命令描述
+$xsed 's#"Show help message"#"显示帮助信息"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Clear the chat history"#"清除聊天历史"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Authenticate with your account"#"登录您的账户"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Sign out of your current session"#"退出当前会话"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Update the Continue CLI"#"更新 Continue CLI"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed "s#\"Check who you're currently logged in as\"#\"查看当前登录用户\"#g" ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Show session information"#"显示会话信息"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Switch between available chat models"#"切换可用的聊天模型"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Switch configuration or organization"#"切换配置或组织"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Manage MCP server connections"#"管理 MCP 服务器连接"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Create an AGENTS.md file"#"创建 AGENTS.md 文件"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Summarize chat history into a compact form"#"将聊天历史汇总为紧凑形式"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Resume a previous chat session"#"恢复之前的聊天会话"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Start a forked chat session from the current history"#"从当前历史启动分叉聊天会话"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Set the title for the current session"#"设置当前会话的标题"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Rename the current session"#"重命名当前会话"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Exit the chat"#"退出聊天"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"List background jobs"#"列出后台任务"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Show all chat sessions"#"显示所有聊天会话"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"List all available skills"#"列出所有可用技能"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Import a skill from a URL or name into ~/.continue/skills"#"从 URL 或名称导入技能到 ~/.continue/skills"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Export a session to JSON file"#"将会话导出到 JSON 文件"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Import a session from JSON file"#"从 JSON 文件导入会话"#g' ${baseDir}/cli/src/commands/commands.ts
+
+# 远程模式命令描述
+$xsed 's#"Exit the remote environment"#"退出远程环境"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Show the current diff from the remote environment"#"显示远程环境的当前差异"#g' ${baseDir}/cli/src/commands/commands.ts
+$xsed 's#"Apply the current diff to the local working tree"#"将当前差异应用到本地工作树"#g' ${baseDir}/cli/src/commands/commands.ts
+
 echo "########## CLI UI Translation Complete ##########"
+
+echo ".continue directory and logo custom"
+$xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/env.ts
+$xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/auth/workos.ts
+$xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/session.ts
+$xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/hooks/hookConfig.ts
+find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue")/".cowork")/g' {} +
+find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue"/".cowork"/g' {} +
