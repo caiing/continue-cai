@@ -64,7 +64,7 @@ jobs:
         run: |
           npm test
           FILE="cn-cli-${{ inputs.stable_version }}.tar.zst"
-          tar --zstd --zstd-compression-level 19 -cf ${FILE} \
+          ZSTD_CLEVEL=19 tar --zstd -cf ${FILE} \
             --exclude="*.map" \
             --exclude="meta.json" \
             --exclude="xhr-sync-worker.js" \
