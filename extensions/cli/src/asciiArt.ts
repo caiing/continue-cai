@@ -6,21 +6,20 @@ import { getVersion } from "./version.js";
 const d = chalk.dim;
 
 export const AICODER_ASCII_ART = `
-${mind.multiline(`    ___    ______________  ____  __________ 
-   /   |  /  _/ ____/ __ \/ __ \/ ____/ __ \
-  / /| |  / // /   / / / / / / / __/ / /_/ /
- / ___ |_/ // /___/ /_/ / /_/ / /___/ _, _/ 
-/_/  |_/___/\____/\____/_____/_____/_/ |_|  
-                                            `)}
+${mind.multiline(`  ████    ██████    ██████    ████    ██████    ████████  ██████    
+██    ██    ██    ██        ██    ██  ██    ██  ██        ██    ██  
+████████    ██    ██        ██    ██  ██    ██  ██████    ██████    
+██    ██    ██    ██        ██    ██  ██    ██  ██        ██    ██  
+██    ██  ██████    ██████    ████    ██████    ████████  ██    ██ `)}
                                                     ${d("v" + getVersion())}`;
 
 // ASCII art for just "AI" (first two letters)
 const AI_ASCII_ART = `
-${mind.multiline(`   __________ 
-  / ____/ __ \
- / /   / / / /
-/ /___/ /_/ / 
-\____/\____/  `)}
+${mind.multiline(`  ██████    ████    
+██        ██    ██  
+██        ██    ██  
+██        ██    ██  
+  ██████    ████   `)}
   ${d("v" + getVersion())}`;
 
 // Minimum terminal width required to display ASCII art properly
