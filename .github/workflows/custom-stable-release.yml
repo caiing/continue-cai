@@ -63,10 +63,18 @@ jobs:
         working-directory: extensions/cli
         run: |
           npm test
-          FILE="cn-cli-${{ inputs.stable_version }}.tar.gz"
-          tar -cvzf ${FILE} dist
+          FILE="cn-cli-${{ inputs.stable_version }}.tar.zst"
+          tar --zstd --zstd-compression-level 19 -cf ${FILE} \
+            --exclude="*.map" \
+            --exclude="meta.json" \
+            --exclude="xhr-sync-worker.js" \
+            dist
+          echo "=== Packaged files ==="
+          tar -tf ${FILE}
+          echo "=== Package size ==="
+          du -sh ${FILE}
 
-          curl --http1.1 --max-time 180 --retry 3 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files
+          curl --http2 --max-time 300 --retry 5 --retry-delay 10 --retry-max-time 600 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files -w "HTTP Status: %{http_code}\nTime: %{time_total}s\nSize: %{size_upload}\n"
 
       - name: Setup Node.js for OIDC publish
         uses: actions/setup-node@v6
