@@ -107,7 +107,7 @@ $xsed 's#"↑/↓ to navigate, Enter to select, Tab to complete"#"↑/↓ 导航
 echo "Translating ActionStatus.tsx..."
 
 # 操作状态提示
-$xsed 's#"esc to interrupt"#"esc 中断"#g' ${baseDir}/cli/src/ui/components/ActionStatus.tsx
+$xsed 's#esc to interrupt#esc中断#g' ${baseDir}/cli/src/ui/components/ActionStatus.tsx
 
 # 翻译 IntroMessage.tsx 文件
 echo "Translating IntroMessage.tsx..."
@@ -153,6 +153,21 @@ $xsed 's#"Import a session from JSON file"#"从 JSON 文件导入会话"#g' ${ba
 $xsed 's#"Exit the remote environment"#"退出远程环境"#g' ${baseDir}/cli/src/commands/commands.ts
 $xsed 's#"Show the current diff from the remote environment"#"显示远程环境的当前差异"#g' ${baseDir}/cli/src/commands/commands.ts
 $xsed 's#"Apply the current diff to the local working tree"#"将当前差异应用到本地工作树"#g' ${baseDir}/cli/src/commands/commands.ts
+
+# 翻译 ToolPermissionSelector.tsx 文件
+echo "Translating ToolPermissionSelector.tsx..."
+
+# 权限选项名称
+$xsed 's#name: "Continue",#name: "继续",#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed "s#name: \"Continue + don't ask again\",#name: \"继续 + 不再询问\",#g" ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's#name: "No, and tell Continue what to do differently",#name: "拒绝，并告知如何改进",#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+
+# 提示文本
+$xsed 's#"Would you like to continue?"#"是否继续？"#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+
+# 警告文本
+$xsed 's#Note: Dangerous commands will be blocked regardless of your preference.#注意：危险命令将被阻止，与您的偏好无关。#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's# preference.##g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
 
 echo "########## CLI UI Translation Complete ##########"
 
