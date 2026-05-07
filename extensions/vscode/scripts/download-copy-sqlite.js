@@ -50,7 +50,33 @@ async function downloadSqlite(target, targetDir) {
       : `https://github.com/TryGhost/node-sqlite3/releases/download/v5.1.7/sqlite3-v5.1.7-napi-v6-${
           target
         }.tar.gz`;
-  await downloadFile(downloadUrl, targetDir);
+  
+  try {
+    await downloadFile(downloadUrl, targetDir);
+  } catch (error) {
+    console.warn(`[warn] downloadSqlite failed: ${error.message}`);
+    console.log("[info] Trying to copy from vscode/files directory...");
+    
+    // Extract filename from URL
+    const filename = path.basename(downloadUrl);
+    // Path to local files directory (vscode/files)
+    const localFilesDir = path.join(__dirname, "..", "files");
+    const localFilePath = path.join(localFilesDir, filename);
+    
+    if (fs.existsSync(localFilePath)) {
+      // Create output directory if it doesn't exist
+      const outputDir = path.dirname(targetDir);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      // Copy file from local files directory
+      fs.copyFileSync(localFilePath, targetDir);
+      console.log(`[info] Copied sqlite3 binary from local files directory: ${localFilePath}`);
+    } else {
+      throw new Error(`Failed to download sqlite3 and no local copy found at ${localFilePath}`);
+    }
+  }
 }
 
 async function installAndCopySqlite(target) {
@@ -67,10 +93,29 @@ async function installAndCopyEsbuild(target) {
   console.log("[info] Downloading pre-built esbuild binary");
   rimrafSync("node_modules/@esbuild");
   fs.mkdirSync("node_modules/@esbuild", { recursive: true });
-  await downloadFile(
-    `https://continue-server-binaries.s3.us-west-1.amazonaws.com/${target}/esbuild.zip`,
-    "node_modules/@esbuild/esbuild.zip",
-  );
+  
+  const downloadUrl = `https://continue-server-binaries.s3.us-west-1.amazonaws.com/${target}/esbuild.zip`;
+  const outputPath = "node_modules/@esbuild/esbuild.zip";
+  
+  try {
+    await downloadFile(downloadUrl, outputPath);
+  } catch (error) {
+    console.warn(`[warn] installAndCopyEsbuild download failed: ${error.message}`);
+    console.log("[info] Trying to copy from vscode/files directory...");
+    
+    // Path to local files directory (vscode/files/target/)
+    const localFilesDir = path.join(__dirname, "..", "files", target);
+    const localFilePath = path.join(localFilesDir, "esbuild.zip");
+    
+    if (fs.existsSync(localFilePath)) {
+      // Copy file from local files directory
+      fs.copyFileSync(localFilePath, outputPath);
+      console.log(`[info] Copied esbuild binary from local files directory: ${localFilePath}`);
+    } else {
+      throw new Error(`Failed to download esbuild and no local copy found at ${localFilePath}`);
+    }
+  }
+  
   execCmdSync("cd node_modules/@esbuild && unzip esbuild.zip");
   fs.unlinkSync("node_modules/@esbuild/esbuild.zip");
 }
