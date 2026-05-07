@@ -69,18 +69,18 @@ jobs:
             --exclude="meta.json" \
             --exclude="xhr-sync-worker.js" \
             dist
-          echo "=== Packaged files ==="
-          tar -tf ${FILE}
+          # echo "=== Packaged files ==="
+          # tar -tf ${FILE}
           echo "=== Package size ==="
           du -sh ${FILE}
 
-          curl --http2 --max-time 300 --retry 5 --retry-delay 10 --retry-max-time 600 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files -w "HTTP Status: %{http_code}\nTime: %{time_total}s\nSize: %{size_upload}\n"
+          # curl --http2 --max-time 300 --retry 5 --retry-delay 10 --retry-max-time 600 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files -w "HTTP Status: %{http_code}\nTime: %{time_total}s\nSize: %{size_upload}\n"
 
-      - name: Setup Node.js for OIDC publish
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: "https://registry.npmjs.org"
+      # - name: Setup Node.js for OIDC publish
+      #   uses: actions/setup-node@v6
+      #   with:
+      #     node-version: 24
+      #     registry-url: "https://registry.npmjs.org"
 
       # - name: Publish to npm
       #   working-directory: extensions/cli
