@@ -36,7 +36,7 @@ $xsed 's#"Error: A prompt is required when using the -p/--print flag, unless --p
 $xsed 's#"Usage examples:"#"使用示例："#g' ${baseDir}/cli/src/index.ts
 
 # 子命令描述
-$xsed 's#"Authenticate with Continue"#"登录 Continue"#g' ${baseDir}/cli/src/index.ts
+$xsed 's#"Authenticate with Continue"#"登录"#g' ${baseDir}/cli/src/index.ts
 $xsed 's#"Log out from Continue"#"退出 Continue"#g' ${baseDir}/cli/src/index.ts
 $xsed 's#"List recent chat sessions and select one to resume"#"列出最近的聊天会话并选择一个继续"#g' ${baseDir}/cli/src/index.ts
 $xsed 's#"Output in JSON format"#"以 JSON 格式输出"#g' ${baseDir}/cli/src/index.ts
@@ -109,6 +109,18 @@ echo "Translating ActionStatus.tsx..."
 # 操作状态提示
 $xsed 's#esc to interrupt#esc中断#g' ${baseDir}/cli/src/ui/components/ActionStatus.tsx
 
+# 翻译 TipsDisplay.tsx 文件
+echo "Translating TipsDisplay.tsx..."
+
+# 提示消息
+$xsed 's#"Use `/help` to learn keyboard shortcuts"#"使用 `/help` 学习键盘快捷键"#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed 's#"Press escape to pause cn, and press enter to continue"#"按 Esc 暂停 cn，按 Enter 继续"#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed 's#"Use arrow keys (↑/↓) to navigate through your input history"#"使用方向键 (↑/↓) 浏览输入历史"#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed "s#Multi-line input is supported by typing \"\\\\\" and pressing enter#支持多行输入，输入 \"\\\\\" 后按 Enter#g" ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed 's#"Use `cn ls` or `/resume` to resume a previous conversation"#"使用 `cn ls` 或 `/resume` 恢复之前的对话"#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed 's#Run `cn` with the `-p` flag for headless mode. For example: `cn -p "Generate a commit message for the current changes. Output _only_ the commit message and nothing else."`#使用 `-p` 标志以无头模式运行 `cn`，例如：`cn -p "为当前更改生成提交消息，只输出提交消息"`#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+$xsed 's#"Use the /init slash command to generate an AGENTS.md file. This will help `cn` understand your codebase and generate better responses."#"使用 /init 斜杠命令生成 AGENTS.md 文件，这将帮助 `cn` 理解您的代码库并生成更好的响应。"#g' ${baseDir}/cli/src/ui/TipsDisplay.tsx
+
 # 翻译 IntroMessage.tsx 文件
 echo "Translating IntroMessage.tsx..."
 
@@ -120,7 +132,9 @@ $xsed 's#<Text bold>Org:</Text>#<Text bold>组织：</Text>#g' ${baseDir}/cli/sr
 $xsed 's#<Text bold>Config:</Text>#<Text bold>配置：</Text>#g' ${baseDir}/cli/src/ui/IntroMessage.tsx
 $xsed 's#<Text bold>Model:</Text>#<Text bold>模型：</Text>#g' ${baseDir}/cli/src/ui/IntroMessage.tsx
 $xsed 's#<Text color="dim">Loading...</Text>#<Text color="dim">加载中...</Text>#g' ${baseDir}/cli/src/ui/IntroMessage.tsx
-
+$xsed 's#Switched to model:#切换到模型：#g' ${baseDir}/cli/src/ui/hooks/useModelSelector.ts
+$xsed 's#to navigate, Enter to select, Esc to cancel# 导航，Enter 选择，Esc 取消#g' ${baseDir}/cli/src/ui/Selector.tsx
+$xsed 's#Signing in with Continue#登录 账户#g' ${baseDir}/cli/src/auth/workos.ts
 # 翻译 commands.ts 文件
 $xsed 's#"Compacting history"#"压缩聊天历史"#g' ${baseDir}/cli/src/ui/TUIChat.tsx
 echo "Translating commands.ts..."
@@ -284,6 +298,31 @@ $xsed 's#"Failed to import session: #"导入会话失败：#g' ${baseDir}/cli/sr
 $xsed 's#"Chat history cleared"#"聊天历史已清除"#g' ${baseDir}/cli/src/slashCommands.ts
 $xsed 's#"Goodbye!"#"再见！"#g' ${baseDir}/cli/src/slashCommands.ts
 $xsed 's#"Unknown command: #"未知命令：#g' ${baseDir}/cli/src/slashCommands.ts
+
+# 翻译 onboarding.ts 文件
+echo "Translating onboarding.ts..."
+
+# 环境检测消息
+$xsed 's#"✓ Using AWS Bedrock (CONTINUE_USE_BEDROCK detected)"#"✓ 使用 AWS Bedrock（已检测到 CONTINUE_USE_BEDROCK）"#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"✓ Using ANTHROPIC_API_KEY from environment"#"✓ 使用环境变量中的 ANTHROPIC_API_KEY"#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"  Config saved to: #"  配置已保存到：#g' ${baseDir}/cli/src/onboarding.ts
+
+# 引导消息
+$xsed 's#"How do you want to get started?"#"您想如何开始？"#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"1. ⏩ Log in with Continue"#"1. ⏩ 使用 Continue 登录"#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"2. 🔑 Enter your Anthropic API key"#"2. 🔑 输入您的 Anthropic API 密钥"#g' ${baseDir}/cli/src/onboarding.ts
+
+# 提示消息
+$xsed 's#"\nEnter choice (1): "#"\n请输入选择 (1)："#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"Please enter 1 or 2"#"请输入 1 或 2"#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"\nEnter your Anthropic API key: "#"\n请输入您的 Anthropic API 密钥："#g' ${baseDir}/cli/src/onboarding.ts
+
+# 成功消息
+$xsed 's#"✓ Config file updated successfully at #"✓ 配置文件已成功更新到：#g' ${baseDir}/cli/src/onboarding.ts
+
+# 错误消息
+$xsed 's#"Invalid choice. Please select \"1\" or \"2\""#"无效选择。请选择 \"1\" 或 \"2\""#g' ${baseDir}/cli/src/onboarding.ts
+$xsed 's#"Failed to load config from \"#"加载配置失败，来自 \"#g' ${baseDir}/cli/src/onboarding.ts
 
 echo "########## CLI UI Translation Complete ##########"
 

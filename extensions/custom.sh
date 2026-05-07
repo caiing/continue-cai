@@ -18,7 +18,7 @@ echo "########## custom llmserv llm provider ########## "
 cp ${baseDir}/../core/llm/llms/Ollama.ts ${baseDir}/../core/llm/llms/Llmserv.ts
 $xsed 's#providerName = "ollama"#providerName = "llmserv"#g' ${baseDir}/../core/llm/llms/Llmserv.ts
 $xsed 's#LlamaStack#Llmserv#g' ${baseDir}/../core/llm/llms/index.ts
-
+$xsed 's#AUTH_NAME = "Continue"#AUTH_NAME = "用户认证"#g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
 echo "########## custom replace begin ########## "
 echo ".continue custom"
 $xsed 's#"AI",#"人工智能",#g' ${baseDir}/../extensions/vscode/package.json
