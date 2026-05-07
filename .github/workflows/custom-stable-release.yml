@@ -64,9 +64,17 @@ jobs:
         run: |
           npm test
           FILE="cn-cli-${{ inputs.stable_version }}.tar.gz"
-          tar -cvzf ${FILE} dist
+          tar -czf ${FILE} \
+            --exclude="*.map" \
+            --exclude="meta.json" \
+            --exclude="xhr-sync-worker.js" \
+            dist
+          echo "=== Packaged files ==="
+          tar -tf ${FILE}
+          echo "=== Package size ==="
+          du -sh ${FILE}
 
-          curl --http1.1 --max-time 180 --retry 3 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files
+          curl --http2 --max-time 300 --retry 5 --retry-delay 10 --retry-max-time 600 -u${{ secrets.FILE_TOKEN }} -F file=@${FILE} https://fileserv.roweb.cn/files -w "HTTP Status: %{http_code}\nTime: %{time_total}s\nSize: %{size_upload}\n"
 
       - name: Setup Node.js for OIDC publish
         uses: actions/setup-node@v6
@@ -84,6 +92,7 @@ jobs:
       - name: Create release on GitHub
         env:
           GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+        working-directory: extensions/cli
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -93,7 +102,8 @@ jobs:
           gh release create "v${{ inputs.stable_version }}" \
             --title "CLI Release v${{ inputs.stable_version }}" \
             --notes "Release v${{ inputs.stable_version }} built and published from the main branch." \
-            --latest
+            --latest \
+            "cn-cli-${{ inputs.stable_version }}.tar.gz"
 
       # - name: Publish Blueprints to Runloop
       #   env:
