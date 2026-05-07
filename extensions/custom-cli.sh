@@ -161,5 +161,7 @@ $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/env.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/auth/workos.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/session.ts
 $xsed 's#".continue"#".cowork"#g' ${baseDir}/../extensions/cli/src/hooks/hookConfig.ts
-find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue")/".cowork")/g' {} +
+find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/Continue CLI/AICoder CLI/g' {} +
 find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's/".continue"/".cowork"/g' {} +
+find ../ -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" \)  -exec ${xsed} 's#.continue/#.cowork/#g' {} +
+
