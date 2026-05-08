@@ -66,11 +66,21 @@ export function isHubEnv(env: ControlPlaneEnv): env is HubEnv {
   );
 }
 
-export function isKeycloakEnv(env: ControlPlaneEnv): env is OnPremEnv {
+export interface KeycloakEnv extends OnPremEnv {
+  KEYCLOAK_URL: string;
+  KEYCLOAK_REALM: string;
+  KEYCLOAK_CLIENT_ID: string;
+}
+
+export function isKeycloakEnv(env: ControlPlaneEnv): env is KeycloakEnv {
   return (
     "AUTH_TYPE" in env &&
     env.AUTH_TYPE === "on-prem" &&
     "KEYCLOAK_URL" in env &&
-    env.KEYCLOAK_URL !== undefined
+    env.KEYCLOAK_URL !== undefined &&
+    "KEYCLOAK_REALM" in env &&
+    env.KEYCLOAK_REALM !== undefined &&
+    "KEYCLOAK_CLIENT_ID" in env &&
+    env.KEYCLOAK_CLIENT_ID !== undefined
   );
 }
