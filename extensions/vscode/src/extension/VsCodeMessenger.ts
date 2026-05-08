@@ -857,5 +857,47 @@ export class VsCodeMessenger {
     this.onWebviewOrCore("reportError", async (msg) => {
       await handleLLMError(msg.data);
     });
+
+    this.onWebviewOrCore("tools/getPolicySettings", async (msg) => {
+      const settings = this.context.globalState.get<{
+        toolSettings: Record<string, string>;
+        toolGroupSettings: Record<string, string>;
+      }>("continue.toolPolicySettings.v1", {
+        toolSettings: {},
+        toolGroupSettings: {},
+      });
+      return settings;
+    });
+
+    this.onWebviewOrCore("tools/savePolicySettings", async (msg) => {
+      const { toolSettings, toolGroupSettings } = msg.data;
+
+      const filteredToolSettings: Record<string, string> = {};
+      const filteredToolGroupSettings: Record<string, string> = {};
+
+      const toolSettingsWhitelist = [
+        "allowedWithPermission",
+        "allowedWithoutPermission",
+        "disabled",
+      ];
+      const toolGroupSettingsWhitelist = ["include", "exclude"];
+
+      for (const [key, value] of Object.entries(toolSettings)) {
+        if (toolSettingsWhitelist.includes(value)) {
+          filteredToolSettings[key] = value;
+        }
+      }
+
+      for (const [key, value] of Object.entries(toolGroupSettings)) {
+        if (toolGroupSettingsWhitelist.includes(value)) {
+          filteredToolGroupSettings[key] = value;
+        }
+      }
+
+      await this.context.globalState.update("continue.toolPolicySettings.v1", {
+        toolSettings: filteredToolSettings,
+        toolGroupSettings: filteredToolGroupSettings,
+      });
+    });
   }
 }

@@ -1,3 +1,12 @@
+interface CliInstallBannerProps {
+  /** Number of sessions user has had - banner shows only if >= sessionThreshold */
+  sessionCount?: number;
+  /** Minimum sessions before showing banner (default: always show) */
+  sessionThreshold?: number;
+  /** If true, dismissal is permanent via localStorage (default: session only) */
+  permanentDismissal?: boolean;
+}
+
 import { CommandLineIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useContext, useEffect, useRef, useState } from "react";
 import { CloseButton } from ".";
@@ -8,15 +17,8 @@ import { getLocalStorage, setLocalStorage } from "../util/localStorage";
 import { CopyButton } from "./StyledMarkdownPreview/StepContainerPreToolbar/CopyButton";
 import { RunInTerminalButton } from "./StyledMarkdownPreview/StepContainerPreToolbar/RunInTerminalButton";
 import { Card } from "./ui";
-
-interface CliInstallBannerProps {
-  /** Number of sessions user has had - banner shows only if >= sessionThreshold */
-  sessionCount?: number;
-  /** Minimum sessions before showing banner (default: always show) */
-  sessionThreshold?: number;
-  /** If true, dismissal is permanent via localStorage (default: session only) */
-  permanentDismissal?: boolean;
-}
+import { useSelector } from "react-redux";
+import { RootState } from "../redux/store";
 
 export function CliInstallBanner({
   sessionCount,
@@ -29,6 +31,11 @@ export function CliInstallBanner({
   const commandTextRef = useRef<HTMLSpanElement>(null);
   const { copyText } = useCopy("npm i -g @continuedev/cli");
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+
+  // 获取配置中的显示开关
+  const showCliBanner = useSelector(
+    (state: RootState) => state.config.config.ui?.showCliBanner ?? false,
+  );
 
   const handleCommandClick = () => {
     // Select the text
@@ -91,7 +98,9 @@ export function CliInstallBanner({
   // - CLI is already installed
   // - User has dismissed it
   // - Session threshold not met (if threshold is set)
+  // - Config setting is false
   if (
+    !showCliBanner ||
     cliInstalled === null ||
     cliInstalled === true ||
     dismissed ||

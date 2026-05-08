@@ -1458,6 +1458,7 @@ export interface ContinueUIConfig {
   displayRawMarkdown?: boolean;
   showChatScrollbar?: boolean;
   codeWrap?: boolean;
+  showCliBanner?: boolean;
   showSessionTabs?: boolean;
   continueAfterToolRejection?: boolean;
 }

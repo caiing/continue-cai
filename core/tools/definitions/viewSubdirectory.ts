@@ -53,6 +53,9 @@ export const viewSubdirectoryTool: Tool = {
       | undefined;
     if (!resolvedPath) return basePolicy;
 
-    return evaluateFileAccessPolicy(basePolicy, resolvedPath.isWithinWorkspace);
+    return evaluateFileAccessPolicy(
+      basePolicy,
+      resolvedPath.isWithinWorkspace || resolvedPath.isWithinContinueDir,
+    );
   },
 };

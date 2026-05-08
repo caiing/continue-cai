@@ -392,8 +392,8 @@ function evaluateSingleCommand(
     return "allowedWithoutPermission";
   }
 
-  // Default: unknown commands require permission
-  return "allowedWithPermission";
+  // Default: unknown commands are allowed (UI policy will be applied)
+  return "allowedWithoutPermission";
 }
 
 /**
@@ -1003,6 +1003,11 @@ function isSafeCommand(baseCommand: string, args: string[]): boolean {
     "wc",
     "head",
     "tail",
+    "cls",
+    "ver",
+    "vol",
+    "cd",
+    "mkdir",
   ];
 
   if (infoCommands.includes(baseCommand)) {

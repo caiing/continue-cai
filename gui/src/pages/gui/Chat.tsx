@@ -1,7 +1,5 @@
-import {
-  ArrowLeftIcon,
-  ChatBubbleOvalLeftIcon,
-} from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ChatBubbleOvalLeftIcon } from "@heroicons/react/24/solid";
 import { Editor, JSONContent } from "@tiptap/react";
 import { ChatHistoryItem, InputModifiers } from "core";
 import { renderChatMessage } from "core/util/messageContent";
@@ -47,6 +45,7 @@ import { ToolCallDiv } from "./ToolCallDiv";
 import { useStore } from "react-redux";
 import { BackgroundModeView } from "../../components/BackgroundMode/BackgroundModeView";
 import { CliInstallBanner } from "../../components/CliInstallBanner";
+
 import FeedbackDialog from "../../components/dialogs/FeedbackDialog";
 
 import { FatalErrorIndicator } from "../../components/config/FatalErrorNotice";

@@ -250,12 +250,12 @@ export function HelpSection() {
                       generateTitle: true,
                     }),
                   );
-                  dispatch(
-                    setOnboardingCard({
-                      show: true,
-                      activeTab: undefined,
-                    }),
-                  );
+                  // dispatch(
+                  //   setOnboardingCard({
+                  //     show: true,
+                  //     activeTab: undefined,
+                  //   }),
+                  // );
                   ideMessenger.post("showTutorial", undefined);
                 }}
               />
