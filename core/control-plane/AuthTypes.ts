@@ -40,6 +40,7 @@ export interface HubEnv {
   CONTROL_PLANE_URL: string;
   AUTH_TYPE: AuthType.WorkOsProd | AuthType.WorkOsStaging;
   WORKOS_CLIENT_ID: string;
+  WORKOS_URL?: string;
   APP_URL: string;
   customAuthConfig: CustomAuthConfig;
 }
@@ -50,6 +51,9 @@ export interface OnPremEnv {
   CONTROL_PLANE_URL: string;
   APP_URL: string;
   customAuthConfig: CustomAuthConfig;
+  KEYCLOAK_URL?: string;
+  KEYCLOAK_REALM?: string;
+  KEYCLOAK_CLIENT_ID?: string;
 }
 
 export type ControlPlaneEnv = HubEnv | OnPremEnv;
@@ -59,5 +63,14 @@ export function isHubEnv(env: ControlPlaneEnv): env is HubEnv {
     "AUTH_TYPE" in env &&
     env.AUTH_TYPE !== "on-prem" &&
     "WORKOS_CLIENT_ID" in env
+  );
+}
+
+export function isKeycloakEnv(env: ControlPlaneEnv): env is OnPremEnv {
+  return (
+    "AUTH_TYPE" in env &&
+    env.AUTH_TYPE === "on-prem" &&
+    "KEYCLOAK_URL" in env &&
+    env.KEYCLOAK_URL !== undefined
   );
 }
