@@ -342,38 +342,43 @@ void (async () => {
   }
 
   console.log("[info] Copying sqlite node binding from core");
-  await new Promise((resolve, reject) => {
-    ncp(
-      path.join(__dirname, "../../../core/node_modules/sqlite3/build"),
-      path.join(__dirname, "../out/build"),
-      { dereference: true },
-      (error) => {
-        if (error) {
-          console.warn("[error] Error copying sqlite3 files", error);
-          reject(error);
-        } else {
-          resolve();
-        }
-      },
-    );
-  });
+  const sqliteBuildPath = path.join(__dirname, "../../../core/node_modules/sqlite3/build");
+  if (fs.existsSync(sqliteBuildPath)) {
+    await new Promise((resolve, reject) => {
+      ncp(
+        sqliteBuildPath,
+        path.join(__dirname, "../out/build"),
+        { dereference: true },
+        (error) => {
+          if (error) {
+            console.warn("[error] Error copying sqlite3 files", error);
+            reject(error);
+          } else {
+            resolve();
+          }
+        },
+      );
+    });
 
-  // Copied here as well for the VS Code test suite
-  await new Promise((resolve, reject) => {
-    ncp(
-      path.join(__dirname, "../../../core/node_modules/sqlite3/build"),
-      path.join(__dirname, "../out"),
-      { dereference: true },
-      (error) => {
-        if (error) {
-          console.warn("[error] Error copying sqlite3 files", error);
-          reject(error);
-        } else {
-          resolve();
-        }
-      },
-    );
-  });
+    // Copied here as well for the VS Code test suite
+    await new Promise((resolve, reject) => {
+      ncp(
+        sqliteBuildPath,
+        path.join(__dirname, "../out"),
+        { dereference: true },
+        (error) => {
+          if (error) {
+            console.warn("[error] Error copying sqlite3 files", error);
+            reject(error);
+          } else {
+            resolve();
+          }
+        },
+      );
+    });
+  } else {
+    console.warn("[warn] sqlite3 build directory not found, skipping copy. Extension might fail if indexing is used.");
+  }
 
   // Copy node_modules for pre-built binaries
   const NODE_MODULES_TO_COPY = ["@lancedb", "@vscode/ripgrep", "workerpool"];
@@ -483,8 +488,8 @@ void (async () => {
     "out/tree-sitter.wasm",
     // Worker required by jsdom
     "out/xhr-sync-worker.js",
-    // SQLite3 Node native module
-    "out/build/Release/node_sqlite3.node",
+    // SQLite3 Node native module (only if exists)
+    ...(fs.existsSync(path.join(__dirname, "../out/build/Release/node_sqlite3.node")) ? ["out/build/Release/node_sqlite3.node"] : []),
 
     // out/node_modules (to be accessed by extension.js)
     `out/node_modules/@vscode/ripgrep/bin/rg${exe}`,

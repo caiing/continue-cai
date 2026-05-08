@@ -1,6 +1,9 @@
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import { MainEditorProvider } from "./components/mainInput/TipTapEditor";
+import { AuthProvider } from "./context/Auth";
+import { IdeMessengerProvider } from "./context/IdeMessenger";
+import { LocalStorageProvider } from "./context/LocalStorage";
 import { SubmenuContextProvidersProvider } from "./context/SubmenuContextProviders";
 import { VscThemeProvider } from "./context/VscTheme";
 import ParallelListeners from "./hooks/ParallelListeners";
@@ -8,6 +11,7 @@ import ConfigPage from "./pages/config";
 import ErrorPage from "./pages/error";
 import Chat from "./pages/gui";
 import History from "./pages/history";
+import Login from "./pages/Login";
 import Stats from "./pages/stats";
 import ThemePage from "./styles/ThemePage";
 import { ROUTES } from "./util/navigation";
@@ -42,6 +46,10 @@ const router = createMemoryRouter([
         path: ROUTES.THEME,
         element: <ThemePage />,
       },
+      {
+        path: "/login",
+        element: <Login loginAction={() => Promise.resolve(true)} />, // 登录页路由，具体逻辑在 Layout 中处理
+      },
     ],
   },
 ]);
@@ -52,14 +60,20 @@ const router = createMemoryRouter([
 */
 function App() {
   return (
-    <VscThemeProvider>
-      <MainEditorProvider>
-        <SubmenuContextProvidersProvider>
-          <RouterProvider router={router} />
-        </SubmenuContextProvidersProvider>
-      </MainEditorProvider>
-      <ParallelListeners />
-    </VscThemeProvider>
+    <IdeMessengerProvider>
+      <LocalStorageProvider>
+        <AuthProvider>
+          <VscThemeProvider>
+            <MainEditorProvider>
+              <SubmenuContextProvidersProvider>
+                <RouterProvider router={router} />
+              </SubmenuContextProvidersProvider>
+            </MainEditorProvider>
+            <ParallelListeners />
+          </VscThemeProvider>
+        </AuthProvider>
+      </LocalStorageProvider>
+    </IdeMessengerProvider>
   );
 }
 

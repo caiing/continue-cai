@@ -1,5 +1,7 @@
 import { ChildProcess, spawn } from "child_process";
 import fs from "fs";
+import os from "os";
+import { logger } from "../util/logger.js";
 
 import {
   evaluateTerminalCommandSecurity,
@@ -48,6 +50,46 @@ export function isRunningInWsl(): boolean {
   }
 }
 
+/**
+ * 获取 Windows 版本信息
+ * @returns "win7", "win8", "win8.1", "win10", "win11", 或 undefined（非 Windows）
+ */
+function getWindowsVersion(): string | undefined {
+  if (process.platform !== "win32") {
+    return undefined;
+  }
+
+  const release = os.release();
+  const match = release.match(/^(\d+)\.(\d+)/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const major = parseInt(match[1], 10);
+  const minor = parseInt(match[2], 10);
+
+  if (major === 6 && minor === 1) {
+    return "win7";
+  } else if (major === 6 && minor === 2) {
+    return "win8";
+  } else if (major === 6 && minor === 3) {
+    return "win8.1";
+  } else if (major === 10 && minor === 0) {
+    // 检查 build 号区分 Windows 10 和 11
+    const buildMatch = release.match(/10\.0\.(\d+)/);
+    if (buildMatch) {
+      const build = parseInt(buildMatch[1], 10);
+      if (build >= 22000) {
+        return "win11";
+      }
+    }
+    return "win10";
+  }
+
+  return undefined;
+}
+
 function getBashMaxChars(): number {
   return parseEnvNumber(
     process.env.CONTINUE_CLI_BASH_MAX_OUTPUT_CHARS,
@@ -64,8 +106,24 @@ function getBashMaxLines(): number {
 
 // Helper function to use login shell on Unix/macOS and PowerShell on Windows and available shell in WSL
 function getShellCommand(command: string): { shell: string; args: string[] } {
+  logger.debug("process.platform:", process.platform);
+
   if (process.platform === "win32") {
-    // Windows: Use PowerShell
+    const winVersion = getWindowsVersion();
+    logger.debug("Windows version:", winVersion);
+
+    // Windows 7 使用不同的命令格式（chcp 输出重定向语法不同）
+    if (winVersion === "win7") {
+      const utf8cmd = `chcp 65001 >nul && ${command}`;
+      logger.debug("Windows 7 cmd:", utf8cmd);
+      return {
+        shell: "cmd.exe",
+        args: ["/c", utf8cmd],
+      };
+    }
+
+    // Windows 8/8.1/10/11 使用统一的命令格式
+    logger.debug("Windows 10+/8 cmd:", command);
     return {
       shell: "powershell.exe",
       args: ["-NoLogo", "-ExecutionPolicy", "Bypass", "-Command", command],
@@ -189,7 +247,7 @@ IMPORTANT: To edit files, use Edit/MultiEdit tools instead of bash commands (sed
     const terminalOutput: string = await new Promise((resolve, reject) => {
       // Use same shell logic as core implementation
       const { shell, args } = getShellCommand(command);
-      const child = spawn(shell, args);
+      const child = spawn(shell, args, { stdio: ["ignore", "pipe", "pipe"] });
       let stdout = "";
       let stderr = "";
       let timeoutId: NodeJS.Timeout;
