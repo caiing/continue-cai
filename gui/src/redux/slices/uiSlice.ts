@@ -120,6 +120,16 @@ export const uiSlice = createSlice({
         state.toolGroupSettings[action.payload] = "include";
       }
     },
+    setAllToolSettings: (
+      state,
+      action: PayloadAction<{
+        toolSettings: ToolPolicies;
+        toolGroupSettings: ToolGroupPolicies;
+      }>,
+    ) => {
+      state.toolSettings = action.payload.toolSettings;
+      state.toolGroupSettings = action.payload.toolGroupSettings;
+    },
     // Rules
     addRule: (state, action: PayloadAction<RuleWithSource>) => {
       state.ruleSettings[action.payload.name!] = DEFAULT_RULE_SETTING;
@@ -161,6 +171,7 @@ export const {
   setToolPolicy,
   clearToolPolicy,
   toggleToolGroupSetting,
+  setAllToolSettings,
   addTool,
   addRule,
   toggleRuleSetting,

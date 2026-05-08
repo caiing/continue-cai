@@ -19,7 +19,7 @@ import {
   setIsSessionMetadataLoading,
   setMode,
 } from "../redux/slices/sessionSlice";
-import { setTTSActive } from "../redux/slices/uiSlice";
+import { setAllToolSettings, setTTSActive } from "../redux/slices/uiSlice";
 
 import { modelSupportsReasoning } from "core/llm/autodetect";
 import { cancelStream } from "../redux/thunks/cancelStream";
@@ -280,6 +280,52 @@ function ParallelListeners() {
   useEffect(() => {
     migrateLocalStorage(dispatch);
   }, []);
+
+  // Tools Policy Persistence
+  const toolSettings = useAppSelector((state) => state.ui.toolSettings);
+  const toolGroupSettings = useAppSelector(
+    (state) => state.ui.toolGroupSettings,
+  );
+
+  useEffect(() => {
+    async function loadToolPolicy() {
+      const result = await ideMessenger.request(
+        "tools/getPolicySettings",
+        undefined,
+      );
+      if (result.status === "success") {
+        const {
+          toolSettings: remoteToolSettings,
+          toolGroupSettings: remoteToolGroupSettings,
+        } = result.content;
+        if (
+          Object.keys(remoteToolSettings).length > 0 ||
+          Object.keys(remoteToolGroupSettings).length > 1
+        ) {
+          dispatch(
+            setAllToolSettings({
+              toolSettings: remoteToolSettings as any,
+              toolGroupSettings: remoteToolGroupSettings as any,
+            }),
+          );
+        } else {
+          // Migration: save current state to extension side
+          ideMessenger.post("tools/savePolicySettings", {
+            toolSettings,
+            toolGroupSettings,
+          });
+        }
+      }
+    }
+    loadToolPolicy();
+  }, [ideMessenger]);
+
+  useEffect(() => {
+    ideMessenger.post("tools/savePolicySettings", {
+      toolSettings,
+      toolGroupSettings,
+    });
+  }, [toolSettings, toolGroupSettings, ideMessenger]);
 
   return <></>;
 }

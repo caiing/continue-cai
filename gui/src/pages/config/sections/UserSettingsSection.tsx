@@ -63,6 +63,7 @@ export function UserSettingsSection() {
     config.ui?.continueAfterToolRejection ?? false;
   const codeWrap = config.ui?.codeWrap ?? false;
   const showChatScrollbar = config.ui?.showChatScrollbar ?? false;
+  const showCliBanner = config.ui?.showCliBanner ?? false;
   const readResponseTTS = config.experimental?.readResponseTTS ?? false;
   const displayRawMarkdown = config.ui?.displayRawMarkdown ?? false;
   const disableSessionTitles = config.disableSessionTitles ?? false;
@@ -136,6 +137,13 @@ export function UserSettingsSection() {
                   onChange={(value) =>
                     handleUpdate({ showChatScrollbar: value })
                   }
+                />
+                <UserSetting
+                  type="toggle"
+                  title="Show CLI Banner"
+                  description="Displays the 'Try out the Continue CLI' banner."
+                  value={showCliBanner}
+                  onChange={(value) => handleUpdate({ showCliBanner: value })}
                 />
                 <UserSetting
                   type="toggle"

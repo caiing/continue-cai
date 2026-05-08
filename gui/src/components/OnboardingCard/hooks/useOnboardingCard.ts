@@ -28,17 +28,20 @@ export function useOnboardingCard(): UseOnboardingCard {
     "hasDismissedOnboardingCard",
   );
 
-  let show: boolean;
+  // let show: boolean;
 
-  // Always show if we explicitly want to, e.g. passing free trial
-  // and setting up keys
-  if (onboardingCard.show) {
-    show = true;
-  } else {
-    show = onboardingStatus !== "Completed" && !hasDismissedOnboardingCard;
-  }
+  // // Always show if we explicitly want to, e.g. passing free trial
+  // // and setting up keys
+  // if (onboardingCard.show) {
+  //   show = true;
+  // } else {
+  //   show = onboardingStatus !== "Completed" && !hasDismissedOnboardingCard;
+  // }
+
+  const show = false;
 
   async function open(tab?: OnboardingModes) {
+    return;
     navigate("/");
     dispatch(
       setOnboardingCard({
@@ -58,6 +61,7 @@ export function useOnboardingCard(): UseOnboardingCard {
   }
 
   function setActiveTab(tab: OnboardingModes) {
+    return;
     dispatch(setOnboardingCard({ show: true, activeTab: tab }));
   }
 

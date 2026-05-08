@@ -101,7 +101,7 @@ export function BlockSettingsTopToolbar() {
 
         {!hasActiveContent && (
           <div className="flex items-center gap-1.5">
-            {isUsingFreeTrial && (
+            {/* {isUsingFreeTrial && (
               <ToolTip content="View remaining starter credits">
                 <StarterCreditsPopover
                   creditStatus={creditStatus}
@@ -112,7 +112,7 @@ export function BlockSettingsTopToolbar() {
                   </HoverItem>
                 </StarterCreditsPopover>
               </ToolTip>
-            )}
+            )} */}
 
             <ToolTip content="Configure rules">
               <HoverItem onClick={handleRulesClick} px={2}>

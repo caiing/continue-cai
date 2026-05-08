@@ -95,6 +95,21 @@ export type ToIdeFromWebviewOrCoreProtocol = {
   logoutOfControlPlane: [undefined, void];
   reportError: [any, void];
   closeSidebar: [undefined, void];
+
+  "tools/getPolicySettings": [
+    undefined,
+    {
+      toolSettings: Record<string, string>;
+      toolGroupSettings: Record<string, string>;
+    },
+  ];
+  "tools/savePolicySettings": [
+    {
+      toolSettings: Record<string, string>;
+      toolGroupSettings: Record<string, string>;
+    },
+    void,
+  ];
 };
 
 export type ToWebviewOrCoreFromIdeProtocol = {
