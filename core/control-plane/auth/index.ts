@@ -25,8 +25,8 @@ export async function getAuthUrlForTokenPage(
       state: uuidv4(),
       provider: "authkit",
     };
-    Object.keys(params).forEach((key) =>
-      url.searchParams.append(key, params[key as keyof typeof params]),
+    Object.entries(params).forEach(([key, value]) =>
+      url.searchParams.append(key, value),
     );
     return url.toString();
   }
@@ -41,8 +41,8 @@ export async function getAuthUrlForTokenPage(
       state: uuidv4(),
       scope: "openid email profile",
     };
-    Object.keys(params).forEach((key) =>
-      url.searchParams.append(key, params[key as keyof typeof params]),
+    Object.entries(params).forEach(([key, value]) =>
+      url.searchParams.append(key, value),
     );
     return url.toString();
   }
