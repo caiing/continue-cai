@@ -8,12 +8,10 @@ import * as vscode from "vscode";
 import { IMessenger } from "../../../core/protocol/messenger";
 
 import { handleLLMError } from "./util/errorHandling";
-import { runTriggerScript } from "./triggerHandler";
 
-export class VsCodeWebviewProtocol implements IMessenger<
-  FromWebviewProtocol,
-  ToWebviewProtocol
-> {
+export class VsCodeWebviewProtocol
+  implements IMessenger<FromWebviewProtocol, ToWebviewProtocol>
+{
   listeners = new Map<
     keyof FromWebviewProtocol,
     ((message: Message) => any)[]
@@ -54,7 +52,11 @@ export class VsCodeWebviewProtocol implements IMessenger<
 
     const handleMessage = async (msg: Message): Promise<void> => {
       if (!("messageType" in msg) || !("messageId" in msg)) {
-        throw new Error(`Invalid webview protocol msg: ${JSON.stringify(msg)}`);
+        // 核心修复逻辑：忽略不符合 VsCodeWebviewProtocol 协议的消息。
+        // 原理：引导页发送的 { command: "login" } 是非协议消息。如果在此处抛出错误，
+        // 会导致整个 Webview 消息处理管道中断。通过静默返回，我们允许该消息
+        // 流转到 Provider 中自定义的 onDidReceiveMessage 监听器进行处理。
+        return;
       }
 
       const respond = (message: any) =>

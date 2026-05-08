@@ -3,11 +3,11 @@ import { useContext, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { CustomScrollbarDiv } from ".";
-import { AuthProvider } from "../context/Auth";
+import { useAuth } from "../context/Auth";
 import { IdeMessengerContext } from "../context/IdeMessenger";
-import { LocalStorageProvider } from "../context/LocalStorage";
 import TelemetryProviders from "../hooks/TelemetryProviders";
 import { useWebviewListener } from "../hooks/useWebviewListener";
+import Login from "../pages/Login";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import { setCodeToEdit } from "../redux/slices/editState";
 import { setDialogMessage, setShowDialog } from "../redux/slices/uiSlice";
@@ -47,6 +47,7 @@ const Layout = () => {
   const dispatch = useAppDispatch();
   const onboardingCard = useOnboardingCard();
   const ideMessenger = useContext(IdeMessengerContext);
+  const { session, login } = useAuth();
 
   const { mainEditor } = useMainEditor();
   const dialogMessage = useAppSelector((state) => state.ui.dialogMessage);
@@ -141,7 +142,7 @@ const Layout = () => {
   useWebviewListener(
     "setupLocalConfig",
     async () => {
-      // onboardingCard.open(OnboardingModes.LOCAL);
+      onboardingCard.open(OnboardingModes.LOCAL);
     },
     [],
   );
@@ -149,15 +150,15 @@ const Layout = () => {
   useWebviewListener(
     "freeTrialExceeded",
     async () => {
-      // dispatch(setShowDialog(true));
-      // onboardingCard.setActiveTab(OnboardingModes.MODELS_ADD_ON);
-      // dispatch(
-      //   setDialogMessage(
-      //     <div className="flex-1">
-      //       <OnboardingCard isDialog />
-      //     </div>,
-      //   ),
-      // );
+      dispatch(setShowDialog(true));
+      onboardingCard.setActiveTab(OnboardingModes.MODELS_ADD_ON);
+      dispatch(
+        setDialogMessage(
+          <div className="flex-1">
+            <OnboardingCard isDialog />
+          </div>,
+        ),
+      );
     },
     [],
   );
@@ -165,7 +166,7 @@ const Layout = () => {
   useWebviewListener(
     "setupApiKey",
     async () => {
-      // onboardingCard.open(OnboardingModes.API_KEY);
+      onboardingCard.open(OnboardingModes.API_KEY);
     },
     [],
   );
@@ -234,52 +235,63 @@ const Layout = () => {
     }
   }, [isHome]);
 
-  return (
-    <LocalStorageProvider>
-      <AuthProvider>
-        <TelemetryProviders>
-          <LayoutTopDiv>
-            {showStagingIndicator && (
-              <span
-                title="Staging environment"
-                className="absolute right-0 mx-1.5 h-1.5 w-1.5 rounded-full"
-                style={{
-                  backgroundColor: "var(--vscode-list-warningForeground)",
-                }}
-              />
-            )}
-            <OSRContextMenu />
-            <div
-              style={{
-                scrollbarGutter: "stable both-edges",
-                minHeight: "100%",
-                display: "grid",
-                gridTemplateRows: "1fr auto",
-              }}
-            >
-              <TextDialog
-                showDialog={showDialog}
-                onEnter={() => {
-                  dispatch(setShowDialog(false));
-                }}
-                onClose={() => {
-                  dispatch(setShowDialog(false));
-                }}
-                message={dialogMessage}
-              />
+  // 如果没有 session 且不是在登录页，渲染登录组件
+  // 这是为了满足“未登录访问任意路由应重定向至本页”的需求
+  if (!session) {
+    return (
+      <LayoutTopDiv>
+        <Login
+          loginAction={() => login(false)}
+          onLogin={() => {
+            // 登录成功后的逻辑，可以通过 AuthProvider 自动触发重新渲染
+          }}
+        />
+      </LayoutTopDiv>
+    );
+  }
 
-              <GridDiv>
-                <PostHogPageView />
-                <Outlet />
-                {/* The fatal error for chat is shown below input */}
-                {!isHome && <FatalErrorIndicator />}
-              </GridDiv>
-            </div>
-            <div style={{ fontSize: fontSize(-4) }} id="tooltip-portal-div" />
-          </LayoutTopDiv>
-        </TelemetryProviders>
-      </AuthProvider>
-    </LocalStorageProvider>
+  return (
+    <TelemetryProviders>
+      <LayoutTopDiv>
+        {showStagingIndicator && (
+          <span
+            title="Staging environment"
+            className="absolute right-0 mx-1.5 h-1.5 w-1.5 rounded-full"
+            style={{
+              backgroundColor: "var(--vscode-list-warningForeground)",
+            }}
+          />
+        )}
+        <OSRContextMenu />
+        <div
+          style={{
+            scrollbarGutter: "stable both-edges",
+            minHeight: "100%",
+            display: "grid",
+            gridTemplateRows: "1fr auto",
+          }}
+        >
+          <TextDialog
+            showDialog={showDialog}
+            onEnter={() => {
+              dispatch(setShowDialog(false));
+            }}
+            onClose={() => {
+              dispatch(setShowDialog(false));
+            }}
+            message={dialogMessage}
+          />
+
+          <GridDiv>
+            <PostHogPageView />
+            <Outlet />
+            {/* The fatal error for chat is shown below input */}
+            {!isHome && <FatalErrorIndicator />}
+          </GridDiv>
+        </div>
+        <div style={{ fontSize: fontSize(-4) }} id="tooltip-portal-div" />
+      </LayoutTopDiv>
+    </TelemetryProviders>
   );
 };
 

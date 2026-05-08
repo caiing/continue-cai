@@ -18,6 +18,7 @@ import {
   AuthenticationSession,
   Disposable,
   env,
+  Event,
   EventEmitter,
   ExtensionContext,
   ProgressLocation,
@@ -28,6 +29,10 @@ import {
 import { PromiseAdapter, promiseFromEvent } from "./promiseUtils";
 import { SecretStorage } from "./SecretStorage";
 import { UriEventHandler } from "./uriHandler";
+
+export interface LocalLoginServer {
+  onCodeReceived: Event<{ code: string; state: string }>;
+}
 
 const AUTH_NAME = "Continue";
 
@@ -89,6 +94,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
   constructor(
     private readonly context: ExtensionContext,
     private readonly _uriHandler: UriEventHandler,
+    private readonly _localLoginServer?: LocalLoginServer,
   ) {
     this._disposable = Disposable.from(
       authentication.registerAuthenticationProvider(
@@ -116,7 +122,19 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
   }
 
   private decodeJwt(jwt: string): Record<string, any> | null {
+    // 保护原理：增加判空检查，防止因 jwt 未定义导致读取 length 属性出错
+    if (!jwt) {
+      return null;
+    }
+
     try {
+      // 模拟原理：如果是模拟 Token，返回一个一年后过期的载荷
+      if (jwt.startsWith("sim_")) {
+        return {
+          exp: Math.floor(Date.now() / 1000) + 3600 * 24 * 365,
+        };
+      }
+
       const decodedToken = JSON.parse(
         Buffer.from(jwt.split(".")[1], "base64").toString(),
       );
@@ -125,8 +143,8 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       // Capture JWT decoding failures to Sentry (could indicate token corruption)
       Logger.error(e, {
         context: "workOS_auth_jwt_decode",
-        jwtLength: jwt.length,
-        jwtPrefix: jwt.substring(0, 20) + "...", // Safe prefix for debugging
+        jwtLength: jwt ? jwt.length : 0,
+        jwtPrefix: jwt ? jwt.substring(0, 20) + "..." : "none", // Safe prefix for debugging
       });
 
       console.warn(`Error decoding JWT: ${e}`);
@@ -206,7 +224,12 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
 
   public static useOnboardingUri: boolean = false;
   get redirectUri() {
-    return this.ideRedirectUri;
+    // 使用本地服务器端口作为回调地址，支持从 customAuthConfig 环境变量配置获取
+    const authConfig = controlPlaneEnv.customAuthConfig;
+    const host = authConfig.LOCAL_SERVER_HOST;
+    const port = authConfig.LOCAL_SERVER_PORT;
+    const path = authConfig.LOCAL_SERVER_CALLBACK_PATH;
+    return `http://${host}:${port}${path}`;
   }
 
   public static hasAttemptedRefresh: Promise<void>;
@@ -315,7 +338,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       // Calculate exponential backoff delay with jitter
       const delay = Math.min(
         baseDelay * Math.pow(2, attempt - 1) * (0.5 + Math.random() * 0.5),
-        2 * 60 * 1000, // 2 minutes
+        1 * 60 * 1000, // 1 minutes
       );
 
       return new Promise((resolve, reject) => {
@@ -375,6 +398,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     scopes: string[],
   ): Promise<ContinueAuthenticationSession> {
     try {
+      console.log("AuthProvider: createSession 被调用");
       const codeVerifier = generateRandomString(64);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
@@ -382,27 +406,31 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
         throw new Error("Login is disabled");
       }
 
+      console.log("AuthProvider: 准备调用 login 方法");
       const token = await this.login(codeChallenge, controlPlaneEnv, scopes);
       if (!token) {
-        throw new Error(`Continue login failure`);
+        // 当用户关闭浏览器未授权，或者授权超时时，抛出明确错误
+        throw new Error(`User cancelled login or login timed out`);
       }
 
+      console.log("AuthProvider: 获取到 Token，准备获取用户信息");
       const userInfo = (await this.getUserInfo(
         token,
         codeVerifier,
         controlPlaneEnv,
       )) as any;
-      const { user, access_token, refresh_token } = userInfo;
+      // const { user, access_token, refresh_token } = userInfo;
+      const { ccid, userName, deptName } = userInfo;
 
       const session: ContinueAuthenticationSession = {
         id: uuidv4(),
-        accessToken: access_token,
-        refreshToken: refresh_token,
-        expiresInMs: this.getExpirationTimeMs(access_token),
+        accessToken: token,
+        refreshToken: token,
+        expiresInMs: this.getExpirationTimeMs(token),
         loginNeeded: false,
         account: {
-          label: this._formatProfileLabel(user.first_name, user.last_name),
-          id: user.email,
+          label: `${userName} (${deptName})`,
+          id: ccid,
         },
         scopes: [],
       };
@@ -469,76 +497,112 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     hubEnv: HubEnv,
     scopes: string[] = [],
   ) {
-    return await window.withProgress<string>(
-      {
-        location: ProgressLocation.Notification,
-        title: "Signing in to Continue...",
-        cancellable: true,
-      },
-      async (_, token) => {
-        const stateId = uuidv4();
+    console.log("AuthProvider: 进入 login 方法");
+    const stateId = uuidv4();
 
-        this._pendingStates.push(stateId);
+    this._pendingStates.push(stateId);
 
-        const scopeString = scopes.join(" ");
+    const scopeString = scopes.join(" ");
 
-        const url = new URL("https://api.workos.com/user_management/authorize");
-        const params = {
-          response_type: "code",
-          client_id: hubEnv.WORKOS_CLIENT_ID,
-          redirect_uri: this.redirectUri,
-          state: stateId,
-          code_challenge: codeChallenge,
-          code_challenge_method: "S256",
-          provider: "authkit",
-          screen_hint: WorkOsAuthProvider.useOnboardingUri
-            ? "sign-up"
-            : "sign-in",
-        };
+    const authConfig = hubEnv.customAuthConfig;
+    console.log("AuthProvider: 获取到 authConfig", authConfig);
+    const loginUrl = authConfig.LOGIN_URL;
+    console.log("AuthProvider: 准备构造 URL:", loginUrl);
+    console.log("AuthProvider: 准备构造 stateId:", stateId);
+    const url = new URL(loginUrl);
+    const params = {
+        siteCode: Buffer.from(authConfig.SITE_CODE).toString("base64"),
+        app: Buffer.from(authConfig.SITE_NAME).toString("base64"),
+        callBackUrl: Buffer.from(`${this.redirectUri}?state=${stateId}`).toString("base64"),
+    };
 
-        Object.keys(params).forEach((key) =>
-          url.searchParams.append(key, params[key as keyof typeof params]),
-        );
-
-        const oauthUrl = url;
-        if (oauthUrl) {
-          await env.openExternal(Uri.parse(oauthUrl.toString()));
-        } else {
-          return;
-        }
-
-        let codeExchangePromise = this._codeExchangePromises.get(scopeString);
-        if (!codeExchangePromise) {
-          codeExchangePromise = promiseFromEvent(
-            this._uriHandler.event,
-            this.handleUri(scopes),
-          );
-          this._codeExchangePromises.set(scopeString, codeExchangePromise);
-        }
-
-        try {
-          return await Promise.race([
-            codeExchangePromise.promise,
-            new Promise<string>(
-              (_, reject) =>
-                setTimeout(() => reject("Cancelled"), 60 * 60 * 1_000), // 60min timeout
-            ),
-            promiseFromEvent<any, any>(
-              token.onCancellationRequested,
-              (_, __, reject) => {
-                reject("User Cancelled");
-              },
-            ).promise,
-          ]);
-        } finally {
-          this._pendingStates = this._pendingStates.filter(
-            (n) => n !== stateId,
-          );
-          codeExchangePromise?.cancel.fire();
-          this._codeExchangePromises.delete(scopeString);
-        }
-      },
+    Object.keys(params).forEach((key) =>
+      url.searchParams.append(key, params[key as keyof typeof params]),
     );
+
+    const oauthUrl = url;
+    if (oauthUrl) {
+      console.log(`AuthProvider: 准备调用 env.openExternal: ${oauthUrl.toString()}`);
+      // 使用异步不阻塞的方式打开链接，避免因为用户未授权导致整个登录流死锁
+      env.openExternal(Uri.parse(oauthUrl.toString())).then((success) => {
+        if (!success) {
+          console.error("AuthProvider: 打开外部链接失败");
+        } else {
+          console.log("AuthProvider: 外部链接已触发打开");
+        }
+      }).catch(err => {
+        console.error("AuthProvider: 调用 env.openExternal 抛出异常", err);
+      });
+    } else {
+      console.log("AuthProvider: oauthUrl 为空，直接返回");
+      return;
+    }
+
+    console.log("AuthProvider: 准备注册回调监听");
+    let codeExchangePromise = this._codeExchangePromises.get(scopeString);
+    if (!codeExchangePromise) {
+      if (this._localLoginServer) {
+        console.log("AuthProvider: 使用本地服务器监听回调");
+        codeExchangePromise = promiseFromEvent(
+          this._localLoginServer.onCodeReceived,
+          async (data, resolve, reject) => {
+            if (this._pendingStates.some((n) => n === data.state)) {
+              resolve(data.code);
+            } else {
+              reject(new Error("State not found"));
+            }
+          },
+        );
+      } else {
+        console.log("AuthProvider: 回退使用 URI Handler 监听回调");
+        codeExchangePromise = promiseFromEvent(
+          this._uriHandler.event,
+          this.handleUri(scopes),
+        );
+      }
+      this._codeExchangePromises.set(scopeString, codeExchangePromise);
+    } else {
+       console.log("AuthProvider: 发现旧的 Promise 残留，先取消它");
+       codeExchangePromise.cancel.fire();
+       this._codeExchangePromises.delete(scopeString);
+
+       if (this._localLoginServer) {
+        codeExchangePromise = promiseFromEvent(
+          this._localLoginServer.onCodeReceived,
+          async (data, resolve, reject) => {
+            if (this._pendingStates.some((n) => n === data.state)) {
+              resolve(data.code);
+            } else {
+              reject(new Error("State not found"));
+            }
+          },
+        );
+      } else {
+        codeExchangePromise = promiseFromEvent(
+          this._uriHandler.event,
+          this.handleUri(scopes),
+        );
+      }
+      this._codeExchangePromises.set(scopeString, codeExchangePromise);
+    }
+
+    console.log("AuthProvider: 开始等待 Promise.race，设置超时机制");
+    try {
+      return await Promise.race([
+        codeExchangePromise.promise,
+        new Promise<string>(
+          (_, reject) =>
+            setTimeout(() => reject(new Error("Login Cancelled by timeout")), 1 * 60 * 1000), // 1min timeout
+        ),
+      ]);
+    } finally {
+      console.log("AuthProvider: Promise.race 结束，清理状态");
+      this._pendingStates = this._pendingStates.filter(
+        (n) => n !== stateId,
+      );
+      codeExchangePromise?.cancel.fire();
+      this._codeExchangePromises.delete(scopeString);
+    }
   }
 
   /**
@@ -582,23 +646,31 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     codeVerifier: string,
     hubEnv: HubEnv,
   ) {
+    // 模拟原理：如果 token 是以 "sim_" 开头的模拟授权码，直接返回模拟的用户信息。
+    // 这避免了向真实的 WorkOS API 发送无效请求，解决了模拟登录时因无法交换 Token 导致的报错。
+    if (token && token.startsWith("sim_")) {
+      return {
+        ccid: "123456789",
+        userName: "developer",
+        deptName: "test",
+        access_token: "sim_access_token_" + Math.random().toString(36).substring(7),
+        refresh_token: "sim_refresh_token_" + Math.random().toString(36).substring(7),
+      };
+    }
+
+    const userInfoBaseUrl = hubEnv.customAuthConfig.USER_INFO_URL;
     const resp = await fetch(
-      "https://api.workos.com/user_management/authenticate",
+      `${userInfoBaseUrl}${token}`,
       {
-        method: "POST",
+        method: "get",
         headers: {
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          client_id: hubEnv.WORKOS_CLIENT_ID,
-          code_verifier: codeVerifier,
-          grant_type: "authorization_code",
-          code: token,
-        }),
+        }
       },
     );
     const text = await resp.text();
-    const data = JSON.parse(text);
+    const res = JSON.parse(text);
+    const data = JSON.parse(res.data);
     return data;
   }
 }

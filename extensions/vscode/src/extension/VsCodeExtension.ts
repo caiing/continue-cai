@@ -3,7 +3,11 @@ import path from "path";
 
 import { IContextProvider } from "core";
 import { ConfigHandler } from "core/config/ConfigHandler";
-import { EXTENSION_NAME, getControlPlaneEnv } from "core/control-plane/env";
+import {
+  EXTENSION_NAME,
+  getControlPlaneEnv,
+  getControlPlaneEnvSync,
+} from "core/control-plane/env";
 import { Core } from "core/core";
 import { FromCoreProtocol, ToCoreProtocol } from "core/protocol";
 import { InProcessMessenger } from "core/protocol/messenger";
@@ -49,6 +53,7 @@ import { NEXT_EDIT_MODELS } from "core/llm/constants";
 import { NextEditProvider } from "core/nextEdit/NextEditProvider";
 import { isNextEditTest } from "core/nextEdit/utils";
 import { JumpManager } from "../activation/JumpManager";
+import { LocalLoginServer } from "../activation/localServer";
 import setupNextEditWindowManager, {
   NextEditWindowManager,
 } from "../activation/NextEditWindowManager";
@@ -84,6 +89,7 @@ export class VsCodeExtension {
   private fileSearch: FileSearch;
   private uriHandler = new UriEventHandler();
   private completionProvider: ContinueCompletionProvider;
+  private localLoginServer: LocalLoginServer;
 
   private ARBITRARY_TYPING_DELAY = 2000;
 
@@ -176,11 +182,41 @@ export class VsCodeExtension {
   }
 
   constructor(context: vscode.ExtensionContext) {
-    // Register auth provider
-    this.workOsAuthProvider = new WorkOsAuthProvider(context, this.uriHandler);
+    // 启动本地登录服务器
+    // 原理：在插件最开始启动一个 34567 端口的服务，用于后续的 OAuth 回调中转和 UI 展示。
+    // 我们将当前的控制面环境配置传递给它，以支持环境变量自定义端口和地址。
+    const controlPlaneEnv = getControlPlaneEnvSync(true ? "production" : "none");
+    this.localLoginServer = new LocalLoginServer(
+      context,
+      controlPlaneEnv.customAuthConfig,
+    );
+    void this.localLoginServer.start();
+    context.subscriptions.push({ dispose: () => this.localLoginServer.stop() });
+
+    // 注册身份验证提供者 (Auth Provider)
+    // 原理：将本地服务器实例传入，使得 AuthProvider 能够监听服务器捕获到的 code 事件。
+    this.workOsAuthProvider = new WorkOsAuthProvider(
+      context,
+      this.uriHandler,
+      this.localLoginServer,
+    );
 
     void this.workOsAuthProvider.refreshSessions();
     context.subscriptions.push(this.workOsAuthProvider);
+
+    // 初始化登录状态上下文 (Context Key)
+    // 原理：通过 VS Code 的 setContext 命令设置一个布尔变量，用于在 package.json 中控制菜单图标的可见性。
+    void (async () => {
+      const env = await getControlPlaneEnv(this.ide.getIdeSettings());
+      const session = await vscode.authentication.getSession(env.AUTH_TYPE, [], {
+        silent: true,
+      });
+      void vscode.commands.executeCommand(
+        "setContext",
+        "continue.isSignedInToControlPlane",
+        !!session,
+      );
+    })();
 
     this.editDecorationManager = new EditDecorationManager(context);
 
@@ -260,6 +296,7 @@ export class VsCodeExtension {
     this.sidebar = new ContinueGUIWebviewViewProvider(
       this.windowId,
       this.extensionContext,
+      this.ide,
     );
 
     // Sidebar
@@ -371,6 +408,15 @@ export class VsCodeExtension {
 
     // Handle uri events
     this.uriHandler.event((uri) => {
+      // 处理本地服务器唤起的登录请求
+      const controlPlaneEnv = getControlPlaneEnvSync();
+      if (uri.path === "/login") {
+        void vscode.authentication.getSession(controlPlaneEnv.AUTH_TYPE, [], {
+          createIfNone: true,
+        });
+        return;
+      }
+
       const queryParams = new URLSearchParams(uri.query);
       let profileId = queryParams.get("profile_id");
       let orgId = queryParams.get("org_id");
@@ -562,23 +608,24 @@ export class VsCodeExtension {
     vscode.authentication.onDidChangeSessions(async (e) => {
       const env = await getControlPlaneEnv(this.ide.getIdeSettings());
       if (e.provider.id === env.AUTH_TYPE) {
+        const session = await vscode.authentication.getSession(
+          env.AUTH_TYPE,
+          [],
+          { silent: true },
+        );
         void vscode.commands.executeCommand(
           "setContext",
           "continue.isSignedInToControlPlane",
-          true,
+          !!session,
         );
 
-        const sessionInfo = await getControlPlaneSessionInfo(true, false);
-        void this.core.invoke("didChangeControlPlaneSessionInfo", {
-          sessionInfo,
-        });
+        if (session) {
+          const sessionInfo = await getControlPlaneSessionInfo(true, false);
+          void this.core.invoke("didChangeControlPlaneSessionInfo", {
+            sessionInfo,
+          });
+        }
       } else {
-        void vscode.commands.executeCommand(
-          "setContext",
-          "continue.isSignedInToControlPlane",
-          false,
-        );
-
         if (e.provider.id === "github") {
           this.configHandler.reloadConfig("Github sign-in status changed");
         }
