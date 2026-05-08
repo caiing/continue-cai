@@ -19,6 +19,15 @@ cp ${baseDir}/../core/llm/llms/Ollama.ts ${baseDir}/../core/llm/llms/Llmserv.ts
 $xsed 's#providerName = "ollama"#providerName = "llmserv"#g' ${baseDir}/../core/llm/llms/Llmserv.ts
 $xsed 's#LlamaStack#Llmserv#g' ${baseDir}/../core/llm/llms/index.ts
 $xsed 's#AUTH_NAME = "Continue"#AUTH_NAME = "用户认证"#g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
+
+$xsed 's#Continue#分布式编码助手#g'  ${baseDir}/../extensions/vscode/login_simulation.html
+$xsed 's#<title>Continue</title>#<title>分布式编码助手</title>#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
+$xsed 's#<h2>欢迎使用 Continue</h2>#<h2>欢迎使用 分布式编码助手</h2>#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
+$xsed 's#<p>Continue 是您的开源 AI 编程助手。#<p>分布式编码助手 是您的开源 AI 编程助手。#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
+$xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
+$xsed 's#Continue 是领先的开源 AI 代码助手#分布式编码助手 是领先的开源 AI 代码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
+$xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/login_simulation.html
+
 echo "########## custom replace begin ########## "
 echo ".continue custom"
 $xsed 's#"AI",#"人工智能",#g' ${baseDir}/../extensions/vscode/package.json
