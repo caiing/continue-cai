@@ -21,7 +21,6 @@ import {
   Event,
   EventEmitter,
   ExtensionContext,
-  ProgressLocation,
   Uri,
   window,
 } from "vscode";
@@ -108,17 +107,14 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
 
     this.secretStorage = new SecretStorage(context);
 
-    // Immediately refresh any existing sessions
+    // Initialize refresh-attempt gate for downstream flows
     this.attemptEmitter = new NodeEventEmitter();
     WorkOsAuthProvider.hasAttemptedRefresh = new Promise((resolve) => {
       this.attemptEmitter.on("attempted", resolve);
     });
-    void this.refreshSessions();
 
-    // Set up a regular interval to refresh tokens
-    this._refreshInterval = setInterval(() => {
-      void this.refreshSessions();
-    }, WorkOsAuthProvider.REFRESH_INTERVAL_MS);
+    // Disable session auto-refresh: immediately unblock dependent flows
+    this.attemptEmitter.emit("attempted");
   }
 
   private decodeJwt(jwt: string): Record<string, any> | null {
@@ -235,25 +231,9 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
   public static hasAttemptedRefresh: Promise<void>;
   private attemptEmitter: NodeEventEmitter;
   async refreshSessions() {
-    // Prevent concurrent refresh operations
-    if (this._isRefreshing) {
-      return;
-    }
-
-    try {
-      this._isRefreshing = true;
-      await this._refreshSessions();
-    } catch (e) {
-      // Capture session refresh failures to Sentry
-      Logger.error(e, {
-        context: "workOS_auth_session_refresh",
-        authType: controlPlaneEnv.AUTH_TYPE,
-      });
-
-      console.error(`Error refreshing sessions: ${e}`);
-    } finally {
-      this._isRefreshing = false;
-    }
+    // Disable session refresh, only signal that refresh has been attempted.
+    this.attemptEmitter.emit("attempted");
+    return;
   }
 
   // It is important that every path in this function emits the attempted event
@@ -338,7 +318,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       // Calculate exponential backoff delay with jitter
       const delay = Math.min(
         baseDelay * Math.pow(2, attempt - 1) * (0.5 + Math.random() * 0.5),
-        1 * 60 * 1000, // 1 minutes
+        0.5 * 60 * 1000, // 0.5 minutes
       );
 
       return new Promise((resolve, reject) => {
@@ -511,9 +491,11 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     console.log("AuthProvider: 准备构造 stateId:", stateId);
     const url = new URL(loginUrl);
     const params = {
-        siteCode: Buffer.from(authConfig.SITE_CODE).toString("base64"),
-        app: Buffer.from(authConfig.SITE_NAME).toString("base64"),
-        callBackUrl: Buffer.from(`${this.redirectUri}?state=${stateId}`).toString("base64"),
+      siteCode: Buffer.from(authConfig.SITE_CODE).toString("base64"),
+      app: Buffer.from(authConfig.SITE_NAME).toString("base64"),
+      callBackUrl: Buffer.from(`${this.redirectUri}?state=${stateId}`).toString(
+        "base64",
+      ),
     };
 
     Object.keys(params).forEach((key) =>
@@ -522,17 +504,22 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
 
     const oauthUrl = url;
     if (oauthUrl) {
-      console.log(`AuthProvider: 准备调用 env.openExternal: ${oauthUrl.toString()}`);
+      console.log(
+        `AuthProvider: 准备调用 env.openExternal: ${oauthUrl.toString()}`,
+      );
       // 使用异步不阻塞的方式打开链接，避免因为用户未授权导致整个登录流死锁
-      env.openExternal(Uri.parse(oauthUrl.toString())).then((success) => {
-        if (!success) {
-          console.error("AuthProvider: 打开外部链接失败");
-        } else {
-          console.log("AuthProvider: 外部链接已触发打开");
-        }
-      }).catch(err => {
-        console.error("AuthProvider: 调用 env.openExternal 抛出异常", err);
-      });
+      env
+        .openExternal(Uri.parse(oauthUrl.toString()))
+        .then((success) => {
+          if (!success) {
+            console.error("AuthProvider: 打开外部链接失败");
+          } else {
+            console.log("AuthProvider: 外部链接已触发打开");
+          }
+        })
+        .catch((err) => {
+          console.error("AuthProvider: 调用 env.openExternal 抛出异常", err);
+        });
     } else {
       console.log("AuthProvider: oauthUrl 为空，直接返回");
       return;
@@ -562,11 +549,11 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       }
       this._codeExchangePromises.set(scopeString, codeExchangePromise);
     } else {
-       console.log("AuthProvider: 发现旧的 Promise 残留，先取消它");
-       codeExchangePromise.cancel.fire();
-       this._codeExchangePromises.delete(scopeString);
+      console.log("AuthProvider: 发现旧的 Promise 残留，先取消它");
+      codeExchangePromise.cancel.fire();
+      this._codeExchangePromises.delete(scopeString);
 
-       if (this._localLoginServer) {
+      if (this._localLoginServer) {
         codeExchangePromise = promiseFromEvent(
           this._localLoginServer.onCodeReceived,
           async (data, resolve, reject) => {
@@ -592,14 +579,15 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
         codeExchangePromise.promise,
         new Promise<string>(
           (_, reject) =>
-            setTimeout(() => reject(new Error("Login Cancelled by timeout")), 1 * 60 * 1000), // 1min timeout
+            setTimeout(
+              () => reject(new Error("Login Cancelled by timeout")),
+              0.5 * 60 * 1000,
+            ), // 0.5min timeout
         ),
       ]);
     } finally {
       console.log("AuthProvider: Promise.race 结束，清理状态");
-      this._pendingStates = this._pendingStates.filter(
-        (n) => n !== stateId,
-      );
+      this._pendingStates = this._pendingStates.filter((n) => n !== stateId);
       codeExchangePromise?.cancel.fire();
       this._codeExchangePromises.delete(scopeString);
     }
@@ -653,21 +641,20 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
         ccid: "123456789",
         userName: "developer",
         deptName: "test",
-        access_token: "sim_access_token_" + Math.random().toString(36).substring(7),
-        refresh_token: "sim_refresh_token_" + Math.random().toString(36).substring(7),
+        access_token:
+          "sim_access_token_" + Math.random().toString(36).substring(7),
+        refresh_token:
+          "sim_refresh_token_" + Math.random().toString(36).substring(7),
       };
     }
 
     const userInfoBaseUrl = hubEnv.customAuthConfig.USER_INFO_URL;
-    const resp = await fetch(
-      `${userInfoBaseUrl}${token}`,
-      {
-        method: "get",
-        headers: {
-          "Content-Type": "application/json",
-        }
+    const resp = await fetch(`${userInfoBaseUrl}${token}`, {
+      method: "get",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+    });
     const text = await resp.text();
     const res = JSON.parse(text);
     const data = JSON.parse(res.data);

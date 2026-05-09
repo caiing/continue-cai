@@ -142,7 +142,7 @@ const Layout = () => {
   useWebviewListener(
     "setupLocalConfig",
     async () => {
-      onboardingCard.open(OnboardingModes.LOCAL);
+      // onboardingCard.open(OnboardingModes.LOCAL);
     },
     [],
   );
@@ -150,15 +150,15 @@ const Layout = () => {
   useWebviewListener(
     "freeTrialExceeded",
     async () => {
-      dispatch(setShowDialog(true));
-      onboardingCard.setActiveTab(OnboardingModes.MODELS_ADD_ON);
-      dispatch(
-        setDialogMessage(
-          <div className="flex-1">
-            <OnboardingCard isDialog />
-          </div>,
-        ),
-      );
+      // dispatch(setShowDialog(true));
+      // onboardingCard.setActiveTab(OnboardingModes.MODELS_ADD_ON);
+      // dispatch(
+      //   setDialogMessage(
+      //     <div className="flex-1">
+      //       <OnboardingCard isDialog />
+      //     </div>,
+      //   ),
+      // );
     },
     [],
   );
@@ -166,7 +166,7 @@ const Layout = () => {
   useWebviewListener(
     "setupApiKey",
     async () => {
-      onboardingCard.open(OnboardingModes.API_KEY);
+      // onboardingCard.open(OnboardingModes.API_KEY);
     },
     [],
   );
@@ -231,7 +231,7 @@ const Layout = () => {
 
   useEffect(() => {
     if (isNewUserOnboarding() && isHome) {
-      onboardingCard.open();
+      // onboardingCard.open();
     }
   }, [isHome]);
 

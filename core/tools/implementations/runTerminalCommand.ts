@@ -26,7 +26,16 @@ function getShellCommand(command: string): { shell: string; args: string[] } {
   if (process.platform === "win32") {
     return {
       shell: "powershell.exe",
-      args: ["-NoLogo", "-ExecutionPolicy", "Bypass", "-Command", command],
+      args: [
+        "-NoLogo",
+        "-NonInteractive",
+        "-InputFormat",
+        "None",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        command,
+      ],
     };
   } else {
     const userShell = process.env.SHELL || "/bin/bash";
@@ -170,7 +179,10 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
           const childProc = childProcess.spawn(shell, args, {
             cwd,
             env: getColorEnv(), // Add enhanced environment for colors
+            shell: process.platform === "win32",
           });
+
+          childProc.stdin?.end();
 
           // Track this process for foreground cancellation
           if (toolCallId && waitForCompletion) {
@@ -409,8 +421,11 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
                 {
                   cwd,
                   env: getColorEnv(),
+                  shell: process.platform === "win32",
                 },
               );
+
+              childProc.stdin?.end();
 
               // Track this process for foreground cancellation
               if (toolCallId) {
