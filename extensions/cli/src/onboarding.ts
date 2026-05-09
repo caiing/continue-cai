@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 import chalk from "chalk";
-import { setConfigFilePermissions } from "core/util/paths.js";
 
 import { AuthConfig, login } from "./auth/workos.js";
 import { getApiClient } from "./config.js";
@@ -13,7 +12,6 @@ import {
   isValidAnthropicApiKey,
 } from "./util/apiKeyValidation.js";
 import { question, questionWithChoices } from "./util/prompt.js";
-import { updateAnthropicModelInYaml } from "./util/yamlConfigUpdater.js";
 
 const CONFIG_PATH = path.join(env.continueHome, "config.yaml");
 
@@ -43,9 +41,9 @@ export async function createOrUpdateConfig(apiKey: string): Promise<void> {
     ? fs.readFileSync(CONFIG_PATH, "utf8")
     : "";
 
-  const updatedContent = updateAnthropicModelInYaml(existingContent, apiKey);
-  fs.writeFileSync(CONFIG_PATH, updatedContent);
-  setConfigFilePermissions(CONFIG_PATH);
+  // const updatedContent = updateAnthropicModelInYaml(existingContent, apiKey);
+  // fs.writeFileSync(CONFIG_PATH, updatedContent);
+  // setConfigFilePermissions(CONFIG_PATH);
 }
 
 export async function runOnboardingFlow(

@@ -113,6 +113,13 @@ function parseSseLine(line: string): { done: boolean; data: any } {
     return { done: true, data: undefined };
   }
   if (line.startsWith("data:")) {
+    const json = line.startsWith("data: ")
+      ? line.slice("data: ".length)
+      : line.slice("data:".length);
+    // Skip empty data lines (common in some OpenAI-compatible APIs)
+    if (!json || json.trim() === "") {
+      return { done: false, data: undefined };
+    }
     return { done: false, data: parseDataLine(line) };
   }
   if (line.startsWith(": ping")) {
@@ -130,6 +137,10 @@ export async function* streamSse(response: Response): AsyncGenerator<any> {
     while ((position = buffer.indexOf("\n")) >= 0) {
       const line = buffer.slice(0, position);
       buffer = buffer.slice(position + 1);
+
+      if (line.trim() === "") {
+        continue; // Skip empty lines
+      }
 
       const { done, data } = parseSseLine(line);
       if (done) {
@@ -157,13 +168,27 @@ export async function* streamJSON(response: Response): AsyncGenerator<any> {
     let position;
     while ((position = buffer.indexOf("\n")) >= 0) {
       const line = buffer.slice(0, position);
+      buffer = buffer.slice(position + 1);
+
+      if (line.trim() === "") {
+        continue; // Skip empty lines
+      }
+
       try {
         const data = JSON.parse(line);
         yield data;
       } catch (e) {
         throw new Error(`Malformed JSON sent from server: ${line}`);
       }
-      buffer = buffer.slice(position + 1);
+    }
+  }
+
+  if (buffer.trim() !== "") {
+    try {
+      const data = JSON.parse(buffer);
+      yield data;
+    } catch (e) {
+      throw new Error(`Malformed JSON sent from server: ${buffer}`);
     }
   }
 }

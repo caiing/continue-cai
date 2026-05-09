@@ -312,8 +312,14 @@ export function testChat(
         }
       }
 
-      const parsedArgs = JSON.parse(args);
-      expect(parsedArgs.name).toBe("Nate");
+      try {
+        const parsedArgs = JSON.parse(args);
+        expect(parsedArgs.name).toBe("Nate");
+      } catch (error) {
+        console.error("Failed to parse tool call arguments:", args);
+        console.error("Error details:", error);
+        throw new Error("JSON解析错误");
+      }
     });
 
     test.skip("Tool Call second message works", async () => {
