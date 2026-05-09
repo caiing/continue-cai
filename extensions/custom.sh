@@ -27,6 +27,7 @@ $xsed 's#<p>Continue 是您的开源 AI 编程助手。#<p>分布式编码助手
 $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
 $xsed 's#Continue 是领先的开源 AI 代码助手#分布式编码助手 是领先的开源 AI 代码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/login_simulation.html
+$xsed 's#vscode://continue.continue/login#vscode://roweb.aicoder/login#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
 
 echo "########## custom replace begin ########## "
 echo ".continue custom"
