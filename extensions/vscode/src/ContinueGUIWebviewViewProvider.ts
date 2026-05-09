@@ -4,8 +4,8 @@ import { getControlPlaneEnv } from "core/control-plane/env";
 import { getTheme } from "./util/getTheme";
 import { getExtensionVersion, getvsCodeUriScheme } from "./util/util";
 import { getExtensionUri, getNonce, getUniqueId } from "./util/vscode";
-import { VsCodeWebviewProtocol } from "./webviewProtocol";
 import { VsCodeIde } from "./VsCodeIde";
+import { VsCodeWebviewProtocol } from "./webviewProtocol";
 
 import type { FileEdit } from "core";
 
@@ -14,6 +14,7 @@ export class ContinueGUIWebviewViewProvider
 {
   public static readonly viewType = "continue.continueGUIView";
   public webviewProtocol: VsCodeWebviewProtocol;
+  private _lastRenderedView: "app" | "login" | undefined;
 
   constructor(
     private readonly windowId: string,
@@ -45,22 +46,29 @@ export class ContinueGUIWebviewViewProvider
       console.log("ContinueGUIWebviewViewProvider: 收到 Webview 消息:", data);
       if (data.command === "login") {
         try {
-          const controlPlaneEnv = await getControlPlaneEnv(this.ide.getIdeSettings());
-          console.log("ContinueGUIWebviewViewProvider: 开始登录流程，AuthType:", controlPlaneEnv.AUTH_TYPE);
-          
+          const controlPlaneEnv = await getControlPlaneEnv(
+            this.ide.getIdeSettings(),
+          );
+          console.log(
+            "ContinueGUIWebviewViewProvider: 开始登录流程，AuthType:",
+            controlPlaneEnv.AUTH_TYPE,
+          );
+
           // 核心原理：调用 VS Code 的身份验证 API，触发 OAuth 流程
           // 强制触发新的 Session，无视可能挂起的缓存
           const session = await vscode.authentication.getSession(
             controlPlaneEnv.AUTH_TYPE,
             [],
-            { forceNewSession: true }
+            { forceNewSession: true },
           );
-          
+
           if (session) {
             console.log("登录成功:", session.account.label);
-            void vscode.window.showInformationMessage("登录成功: " + session.account.label);
+            void vscode.window.showInformationMessage(
+              "登录成功: " + session.account.label,
+            );
             // 登录成功后立即刷新 HTML 内容切换到 React 应用
-            this.updateWebviewHtml();
+            this.updateWebviewHtml(true);
           } else {
             console.warn("未获取到 Session，可能用户取消了登录");
             // 通知前端登录失败，重置按钮状态
@@ -80,12 +88,16 @@ export class ContinueGUIWebviewViewProvider
     // 监听登录状态变化
     // 原理：当用户完成登录或退出登录时，VS Code 会触发此事件。
     // 我们在此处更新 Webview 的内容，实现登录前后的无缝界面切换。
-    const authSubscription = vscode.authentication.onDidChangeSessions(async (e) => {
-      const controlPlaneEnv = await getControlPlaneEnv(this.ide.getIdeSettings());
-      if (e.provider.id === controlPlaneEnv.AUTH_TYPE) {
-        this.updateWebviewHtml();
-      }
-    });
+    const authSubscription = vscode.authentication.onDidChangeSessions(
+      async (e) => {
+        const controlPlaneEnv = await getControlPlaneEnv(
+          this.ide.getIdeSettings(),
+        );
+        if (e.provider.id === controlPlaneEnv.AUTH_TYPE) {
+          this.updateWebviewHtml();
+        }
+      },
+    );
     this.extensionContext.subscriptions.push(authSubscription);
 
     // 当 Webview 变得可见时，检查登录状态
@@ -95,49 +107,49 @@ export class ContinueGUIWebviewViewProvider
       if (webviewView.visible) {
         this.updateWebviewHtml();
         // 使用 promise 而不是 async/await
-        getControlPlaneEnv(this.ide.getIdeSettings()).then((controlPlaneEnv) => {
-          vscode.authentication.getSession(
-            controlPlaneEnv.AUTH_TYPE,
-            [],
-            { silent: true },
-          ).then((session) => {
-            if (!session) {
-              console.log("切换到插件且未登录，自动触发登录...");
-              // 添加一点延迟以确保 HTML 加载完毕
-              setTimeout(() => {
-                webviewView.webview.postMessage({ command: "triggerLogin" });
-              }, 500);
-            }
-          });
-        });
+        getControlPlaneEnv(this.ide.getIdeSettings()).then(
+          (controlPlaneEnv) => {
+            vscode.authentication
+              .getSession(controlPlaneEnv.AUTH_TYPE, [], { silent: true })
+              .then((session) => {
+                if (!session) {
+                  console.log("切换到插件且未登录，自动触发登录...");
+                  // 添加一点延迟以确保 HTML 加载完毕
+                  setTimeout(() => {
+                    webviewView.webview.postMessage({
+                      command: "triggerLogin",
+                    });
+                  }, 500);
+                }
+              });
+          },
+        );
       }
     });
 
     if (webviewView.visible) {
       this.updateWebviewHtml();
       setTimeout(() => {
-        getControlPlaneEnv(this.ide.getIdeSettings()).then((controlPlaneEnv) => {
-          vscode.authentication.getSession(
-            controlPlaneEnv.AUTH_TYPE,
-            [],
-            { silent: true },
-          ).then((session) => {
-            if (!session) {
-              console.log("初始化时未登录，自动触发登录...");
-              webviewView.webview.postMessage({ command: "triggerLogin" });
-            }
-          });
-        });
+        getControlPlaneEnv(this.ide.getIdeSettings()).then(
+          (controlPlaneEnv) => {
+            vscode.authentication
+              .getSession(controlPlaneEnv.AUTH_TYPE, [], { silent: true })
+              .then((session) => {
+                if (!session) {
+                  console.log("初始化时未登录，自动触发登录...");
+                  webviewView.webview.postMessage({ command: "triggerLogin" });
+                }
+              });
+          },
+        );
       }, 1000);
     }
-
-
   }
 
   /**
    * 根据登录状态更新 Webview 的 HTML 内容
    */
-  private async updateWebviewHtml() {
+  private async updateWebviewHtml(force = false) {
     if (!this._webviewView) {
       return;
     }
@@ -149,7 +161,12 @@ export class ContinueGUIWebviewViewProvider
       { silent: true },
     );
 
-    if (session) {
+    const nextView: "app" | "login" = session ? "app" : "login";
+    if (!force && this._lastRenderedView === nextView) {
+      return;
+    }
+
+    if (nextView === "app") {
       // 已登录：显示主页面（React 应用）
       this._webviewView.webview.html = this.getSidebarContent(
         this.extensionContext,
@@ -157,8 +174,11 @@ export class ContinueGUIWebviewViewProvider
       );
     } else {
       // 未登录：显示登录引导页
-      this._webviewView.webview.html = this.getLoginRequiredContent(this._webviewView.webview);
+      this._webviewView.webview.html = this.getLoginRequiredContent(
+        this._webviewView.webview,
+      );
     }
+    this._lastRenderedView = nextView;
   }
 
   /**
@@ -171,7 +191,7 @@ export class ContinueGUIWebviewViewProvider
   private getLoginRequiredContent(webview: vscode.Webview): string {
     const extensionUri = this.extensionContext.extensionUri;
     const logoUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, "media", "icon.png")
+      vscode.Uri.joinPath(extensionUri, "media", "icon.png"),
     );
 
     const nonce = getNonce();
@@ -292,7 +312,7 @@ export class ContinueGUIWebviewViewProvider
                     btn.disabled = false;
                     progress.innerText = '如果浏览器未打开，请点击重新登录';
                   }
-                }, 60000); // 缩短超时提示 1分钟
+                }, 30000); // 缩短超时提示 30秒
               } catch (err) {
                 console.error("处理出错:", err);
               }

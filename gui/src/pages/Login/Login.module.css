@@ -5,10 +5,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  background-color: #f5f5f5;
+  background-color: var(--vscode-sideBar-background);
+  color: var(--vscode-sideBar-foreground);
   overflow-y: hidden;
   position: relative;
   box-sizing: border-box;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .logoWrapper {
@@ -49,7 +53,7 @@
 .description {
   font-size: 18px;
   line-height: 1.5;
-  color: #333;
+  color: var(--vscode-sideBar-foreground);
   text-align: center;
   margin: 0;
 }
@@ -71,8 +75,8 @@
   width: 80%;
   max-width: 400px;
   height: 48px;
-  background-color: #2563eb;
-  color: #fff;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
   border: none;
   border-radius: 6px;
   font-size: 16px;
@@ -81,16 +85,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .loginButton:disabled {
-  background-color: #93c5fd;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
 .loginButton:hover:not(:disabled) {
-  background-color: #1d4ed8;
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .spinner {

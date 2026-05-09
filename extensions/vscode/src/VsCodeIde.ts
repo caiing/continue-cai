@@ -352,7 +352,7 @@ class VsCodeIde implements IDE {
       terminal = vscode.window.createTerminal(options?.terminalName);
     }
     terminal.show();
-    terminal.sendText(command, false);
+    terminal.sendText(command, true);
   }
 
   async saveFile(fileUri: string): Promise<void> {

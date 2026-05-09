@@ -1,4 +1,4 @@
-import { ChildProcess } from "child_process";
+import { ChildProcess, exec } from "child_process";
 
 // Track which processes have been backgrounded
 const processTerminalBackgroundStates = new Map<string, boolean>();
@@ -70,16 +70,25 @@ export function removeRunningProcess(toolCallId: string): void {
 export async function killTerminalProcess(toolCallId: string): Promise<void> {
   const processInfo = processTerminalForegroundStates.get(toolCallId);
   if (processInfo && !processInfo.process.killed) {
-    const { process } = processInfo;
+    const { process: childProc } = processInfo;
 
-    process.kill("SIGTERM");
-
-    // Force kill after 5 seconds if still running
-    setTimeout(() => {
-      if (!process.killed) {
-        process.kill("SIGKILL");
+    if (process.platform === "win32") {
+      try {
+        exec(`taskkill /pid ${childProc.pid} /T /F`);
+      } catch (e) {
+        console.error("Failed to taskkill process:", e);
+        childProc.kill("SIGKILL");
       }
-    }, 5000);
+    } else {
+      childProc.kill("SIGTERM");
+
+      // Force kill after 5 seconds if still running
+      setTimeout(() => {
+        if (!childProc.killed) {
+          childProc.kill("SIGKILL");
+        }
+      }, 5000);
+    }
 
     processTerminalForegroundStates.delete(toolCallId);
   }

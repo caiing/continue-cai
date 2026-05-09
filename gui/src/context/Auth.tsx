@@ -23,6 +23,8 @@ import { IdeMessengerContext } from "./IdeMessenger";
 
 interface AuthContextType {
   session: ControlPlaneSessionInfo | undefined;
+  isSessionLoading: boolean;
+  hasCachedSession: boolean;
   logout: () => void;
   login: (useOnboarding: boolean) => Promise<boolean>;
   selectedProfile: ProfileDescription | null;
@@ -32,6 +34,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_SESSION_CACHE_KEY = "continue.auth.hasSession";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -42,6 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<ControlPlaneSessionInfo | undefined>(
     undefined,
   );
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [hasCachedSession, setHasCachedSession] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(AUTH_SESSION_CACHE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
 
   // Orgs
   const orgs = useAppSelector((store) => store.profiles.organizations);
@@ -50,7 +61,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const currentOrg = useAppSelector(selectCurrentOrg);
   const selectedProfile = useAppSelector(selectSelectedProfile);
 
+  const setSessionCache = (hasSession: boolean) => {
+    setHasCachedSession(hasSession);
+    try {
+      if (hasSession) {
+        window.localStorage.setItem(AUTH_SESSION_CACHE_KEY, "1");
+      } else {
+        window.localStorage.removeItem(AUTH_SESSION_CACHE_KEY);
+      }
+    } catch {
+      // ignore persistence failures
+    }
+  };
+
   const login: AuthContextType["login"] = async (useOnboarding: boolean) => {
+    setIsSessionLoading(true);
     try {
       const result = await ideMessenger.request("getControlPlaneSessionInfo", {
         silent: false,
@@ -59,17 +84,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (result.status === "error") {
         console.error("Login failed:", result.error);
+        setSession(undefined);
+        setSessionCache(false);
         return false;
       }
 
       const session = result.content;
       setSession(session);
-
-      return true;
+      setSessionCache(Boolean(session));
+      return Boolean(session);
     } catch (error: any) {
       console.error("Login request failed:", error);
-      // Let the error propagate so the caller can handle it
       throw error;
+    } finally {
+      setIsSessionLoading(false);
     }
   };
 
@@ -78,25 +106,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch(setOrganizations(orgs.filter((org) => org.id === "personal")));
     dispatch(setSelectedOrgId("personal"));
     setSession(undefined);
+    setSessionCache(false);
+    setIsSessionLoading(false);
   };
 
   useEffect(() => {
     async function init() {
-      const result = await ideMessenger.request("getControlPlaneSessionInfo", {
-        silent: true,
-        useOnboarding: false,
-      });
-      if (result.status === "success") {
-        setSession(result.content);
+      setIsSessionLoading(true);
+      try {
+        const result = await ideMessenger.request(
+          "getControlPlaneSessionInfo",
+          {
+            silent: true,
+            useOnboarding: false,
+          },
+        );
+        if (result.status === "success") {
+          setSession(result.content);
+          setSessionCache(Boolean(result.content));
+        } else {
+          setSession(undefined);
+          setSessionCache(false);
+        }
+      } catch {
+        setSession(undefined);
+        setSessionCache(false);
+      } finally {
+        setIsSessionLoading(false);
       }
     }
     void init();
-  }, []);
+  }, [ideMessenger]);
 
   useWebviewListener(
     "sessionUpdate",
     async (data) => {
       setSession(data.sessionInfo);
+      setSessionCache(Boolean(data.sessionInfo));
+      setIsSessionLoading(false);
     },
     [],
   );
@@ -123,6 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         session,
+        isSessionLoading,
+        hasCachedSession,
         logout,
         login,
         selectedProfile,
