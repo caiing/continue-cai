@@ -78,6 +78,7 @@ cp -pv ${baseDir}/../extensions/vscode/media/sidebar-icon-custom.png ${baseDir}/
 
 echo "########## custom plugin ########## "
 find ../ -type f -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" | xargs -I@ bash -c "${xsed} -i.bak 's#Continue.continue#Roweb.aicoder#g' @"
+find ../ -type f -name "*.ts" -o -name "*.tsx" -o -name "*.json" -o -name "*.mdx" | xargs -I@ bash -c "${xsed} -i.bak 's#https://github.com/continuedev/continue#https://roweb.cn/roweb/aicoder#g' @"
 $xsed 's#"name": "continue",#"name": "aicoder",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#"publisher": "Continue",#"publisher": "Roweb",#g' ${baseDir}/../extensions/vscode/package.json
 $xsed 's#Continue Dev#Roweb Dev#g' ${baseDir}/../extensions/vscode/package.json
@@ -168,10 +169,10 @@ $xsed 's#To view settings, please expand the sidebar by dragging the#为查看�
 $xsed 's# left/right border#左/右边界#g' ${baseDir}/../gui/src/pages/config/index.tsx
 
 # 简化 session 按钮的文本
-$xsed 's#<span className="text-2xs">Log out</span>#<span className="text-2xs"></span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
-$xsed 's#<span className="text-2xs">Log in</span>#<span className="text-2xs"></span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
-$xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
-$xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#<span className="text-2xs">Log out</span>#<span className="text-2xs">登出</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#<span className="text-2xs">Log in</span>#<span className="text-2xs">登录</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+# $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+# $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<span className="text-2xs">Reload</span>#<span className="text-2xs">重新加载</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 
@@ -299,6 +300,9 @@ $xsed 's#title="Wrap Codeblocks"#title="换行代码块"#g' ${baseDir}/../gui/sr
 $xsed 's#Wraps long lines in code blocks instead of showing horizontal scroll.#在代码块中换行长行，而不是显示水平滚动。#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
 $xsed 's#title="Show Chat Scrollbar"#title="显示对话滚动条"#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
 $xsed 's#Enables a scrollbar in the chat window.#在对话窗口中启用滚动条。#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
+$xsed 's#title="Show CLI Banner"#title="显示 CLI 提示"#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
+$xsed "s#description=\"Displays the 'Try out the Continue CLI' banner.\"#description=\"显示 CLI 提示。\"#g" ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
+$xsed 's#description="Displays the '\''Try out the Continue CLI'\'' banner."#description="显示 CLI 提示。"#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
 $xsed 's#title="Text-to-Speech Output"#title="文本到语音输出"#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
 $xsed 's#Reads LLM responses aloud with TTS.#使用 TTS 大声朗读 LLM 响应。#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
 $xsed 's#title="Enable Session Titles"#title="启用会话标题"#g' ${baseDir}/../gui/src/pages/config/sections/UserSettingsSection.tsx
