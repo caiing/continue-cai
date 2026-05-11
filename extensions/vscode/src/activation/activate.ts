@@ -9,6 +9,8 @@ import { GlobalContext } from "core/util/GlobalContext";
 import { VsCodeContinueApi } from "./api";
 import setupInlineTips from "./InlineTipManager";
 
+// const EXTENSION_NAME = "continue";
+
 export async function activateExtension(context: vscode.ExtensionContext) {
   const platformCheck = isUnsupportedPlatform();
   const globalContext = new GlobalContext();
@@ -55,6 +57,11 @@ export async function activateExtension(context: vscode.ExtensionContext) {
       true,
     );
   }
+
+  // const vscodeConfig = vscode.workspace.getConfiguration(EXTENSION_NAME);
+  // await vscodeConfig.update("enableTabAutocomplete", false, vscode.ConfigurationTarget.Global);
+  // await vscodeConfig.update("enableNextEdit", false, vscode.ConfigurationTarget.Global);
+  // await vscodeConfig.update("enableQuickActions", false, vscode.ConfigurationTarget.Global);
 
   // Register config.yaml schema by removing old entries and adding new one (uri.fsPath changes with each version)
   const yamlMatcher = ".continue/**/*.yaml";

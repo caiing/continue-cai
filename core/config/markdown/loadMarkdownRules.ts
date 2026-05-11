@@ -84,6 +84,7 @@ export async function loadMarkdownRules(ide: IDE): Promise<{
               ...rule,
               source: "rules-block",
               sourceFile: file.path,
+              alwaysApply: rule.alwaysApply ?? false,
             });
           }
         } catch (e) {
