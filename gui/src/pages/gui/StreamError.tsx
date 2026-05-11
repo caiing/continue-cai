@@ -120,14 +120,14 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
     </GhostButton>
   );
 
-  // if (
-  //   parsedError.includes(
-  //     "You have no credits remaining on your Continue account",
-  //   ) ||
-  //   parsedError.includes("You're out of credits!")
-  // ) {
-  //   return <OutOfCreditsDialog />;
-  // }
+  if (
+    parsedError.includes(
+      "You have no credits remaining on your Continue account",
+    ) ||
+    parsedError.includes("You're out of credits!")
+  ) {
+    return <OutOfCreditsDialog />;
+  }
 
   let errorContent = (
     <div className="mb-1 mt-3">
@@ -272,7 +272,7 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
     <div className="flex flex-col gap-4 px-3 pb-3 pt-3">
       {/* Concise error title */}
       <h3 className="text-error m-0 p-0 text-lg font-medium">
-        Error handling model response
+        模型响应错误，建议新开会话问答
       </h3>
 
       {errorContent}

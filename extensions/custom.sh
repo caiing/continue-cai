@@ -20,11 +20,10 @@ $xsed 's#providerName = "ollama"#providerName = "llmserv"#g' ${baseDir}/../core/
 $xsed 's#LlamaStack#Llmserv#g' ${baseDir}/../core/llm/llms/index.ts
 $xsed 's#AUTH_NAME = "Continue"#AUTH_NAME = "用户认证"#g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
 
-$xsed 's#Continue#分布式编码助手#g'  ${baseDir}/../extensions/vscode/login_simulation.html
 $xsed 's#<title>Continue</title>#<title>分布式编码助手</title>#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
-$xsed 's#<h2>欢迎使用 Continue</h2>#<h2>欢迎使用 分布式编码助手</h2>#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
-$xsed 's#<p>Continue 是您的开源 AI 编程助手。#<p>分布式编码助手 是您的开源 AI 编程助手。#g' ${baseDir}/../extensions/vscode/src/ContinueGUIWebviewViewProvider.ts
 $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
+$xsed 's#欢迎使用 Continue#欢迎使用 分布式编码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
+$xsed 's#Continue 是您的开源 AI 编程助手。#分布式编码助手是您的开源 AI 编程助手。#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#Continue 是领先的开源 AI 代码助手#分布式编码助手 是领先的开源 AI 代码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/login_simulation.html
 $xsed 's#vscode://continue.continue/login#vscode://roweb.aicoder/login#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
@@ -882,6 +881,13 @@ $xsed 's/description: "Type to search docs"/description: "输入以搜索文档"
 
 # utils.ts
 $xsed 's/description: "Instructions"/description: "说明"/g' ${baseDir}/../core/context/providers/utils.ts
+
+# 汉化登录错误信息
+$xsed 's/Sign in failed:/登录失败：/g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
+$xsed 's/User cancelled login or login timed out/用户取消登录或登录超时/g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
+$xsed 's/Login Cancelled by timeout/登录超时已取消/g' ${baseDir}/../extensions/vscode/src/stubs/WorkOsAuthProvider.ts
+$xsed 's/An error occurred during login, please try again./登录过程中发生错误，请重试。/g' ${baseDir}/../gui/src/pages/Login/index.tsx
+$xsed 's/Login timed out, please try again./登录超时，请重试。/g' ${baseDir}/../gui/src/pages/Login/index.tsx
 
 execEndTime=`date +%Y%m%d-%H:%M:%S`
 

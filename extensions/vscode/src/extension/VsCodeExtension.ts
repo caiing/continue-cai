@@ -182,13 +182,25 @@ export class VsCodeExtension {
   }
 
   constructor(context: vscode.ExtensionContext) {
+    this.extensionContext = context;
+    this.windowId = uuidv4();
+
+    let resolveWebviewProtocol: any = undefined;
+    this.webviewProtocolPromise = new Promise<VsCodeWebviewProtocol>(
+      (resolve) => {
+        resolveWebviewProtocol = resolve;
+      },
+    );
+    this.ide = new VsCodeIde(this.webviewProtocolPromise, context);
+    this.ideUtils = new VsCodeIdeUtils();
+
     // 启动本地登录服务器
     // 原理：在插件最开始启动一个 34567 端口的服务，用于后续的 OAuth 回调中转和 UI 展示。
     // 我们将当前的控制面环境配置传递给它，以支持环境变量自定义端口和地址。
     const controlPlaneEnv = getControlPlaneEnvSync(true ? "production" : "none");
     this.localLoginServer = new LocalLoginServer(
       context,
-      controlPlaneEnv.customAuthConfig,
+      controlPlaneEnv,
     );
     void this.localLoginServer.start();
     context.subscriptions.push({ dispose: () => this.localLoginServer.stop() });
@@ -204,32 +216,7 @@ export class VsCodeExtension {
     void this.workOsAuthProvider.refreshSessions();
     context.subscriptions.push(this.workOsAuthProvider);
 
-    // 初始化登录状态上下文 (Context Key)
-    // 原理：通过 VS Code 的 setContext 命令设置一个布尔变量，用于在 package.json 中控制菜单图标的可见性。
-    void (async () => {
-      const env = await getControlPlaneEnv(this.ide.getIdeSettings());
-      const session = await vscode.authentication.getSession(env.AUTH_TYPE, [], {
-        silent: true,
-      });
-      void vscode.commands.executeCommand(
-        "setContext",
-        "continue.isSignedInToControlPlane",
-        !!session,
-      );
-    })();
-
     this.editDecorationManager = new EditDecorationManager(context);
-
-    let resolveWebviewProtocol: any = undefined;
-    this.webviewProtocolPromise = new Promise<VsCodeWebviewProtocol>(
-      (resolve) => {
-        resolveWebviewProtocol = resolve;
-      },
-    );
-    this.ide = new VsCodeIde(this.webviewProtocolPromise, context);
-    this.ideUtils = new VsCodeIdeUtils();
-    this.extensionContext = context;
-    this.windowId = uuidv4();
 
     // Check if model supports next edit to determine if we should use full file diff.
     const getUsingFullFileDiff = async () => {
@@ -409,7 +396,9 @@ export class VsCodeExtension {
     // Handle uri events
     this.uriHandler.event((uri) => {
       // 处理本地服务器唤起的登录请求
-      const controlPlaneEnv = getControlPlaneEnvSync();
+      const controlPlaneEnv = getControlPlaneEnvSync(
+        true ? "production" : "none",
+      );
       if (uri.path === "/login") {
         void vscode.authentication.getSession(controlPlaneEnv.AUTH_TYPE, [], {
           createIfNone: true,

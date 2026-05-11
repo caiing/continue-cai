@@ -1,4 +1,3 @@
-import { OnboardingModes } from "core/protocol/core";
 import { useContext, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -18,12 +17,9 @@ import { ROUTES } from "../util/navigation";
 import { FatalErrorIndicator } from "./config/FatalErrorNotice";
 import TextDialog from "./dialogs";
 import { GenerateRuleDialog } from "./GenerateRuleDialog";
+import RingLoader from "./loaders/RingLoader";
 import { useMainEditor } from "./mainInput/TipTapEditor";
-import {
-  isNewUserOnboarding,
-  OnboardingCard,
-  useOnboardingCard,
-} from "./OnboardingCard";
+import { isNewUserOnboarding, useOnboardingCard } from "./OnboardingCard";
 import OSRContextMenu from "./OSRContextMenu";
 import PostHogPageView from "./PosthogPageView";
 
@@ -34,10 +30,9 @@ const LayoutTopDiv = styled(CustomScrollbarDiv)`
 `;
 
 const GridDiv = styled.div`
-  display: grid;
-  grid-template-rows: 1fr auto;
-  height: 100vh;
-  overflow-x: visible;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 `;
 
 const Layout = () => {
@@ -47,7 +42,14 @@ const Layout = () => {
   const dispatch = useAppDispatch();
   const onboardingCard = useOnboardingCard();
   const ideMessenger = useContext(IdeMessengerContext);
-  const { session, login } = useAuth();
+  const { session, login, isSessionLoading, isInitialLoading, loginRequired } =
+    useAuth();
+
+  useEffect(() => {
+    if (!isInitialLoading && !session && loginRequired) {
+      void login(false);
+    }
+  }, [isInitialLoading, session, loginRequired, login]);
 
   const { mainEditor } = useMainEditor();
   const dialogMessage = useAppSelector((state) => state.ui.dialogMessage);
@@ -235,59 +237,60 @@ const Layout = () => {
     }
   }, [isHome]);
 
-  // 如果没有 session 且不是在登录页，渲染登录组件
-  // 这是为了满足“未登录访问任意路由应重定向至本页”的需求
-  if (!session) {
-    return (
-      <LayoutTopDiv>
-        <Login
-          loginAction={() => login(false)}
-          onLogin={() => {
-            // 登录成功后的逻辑，可以通过 AuthProvider 自动触发重新渲染
-          }}
-        />
-      </LayoutTopDiv>
-    );
-  }
+  // 如果正在进行初始加载，渲染加载状态以避免黑屏
 
   return (
     <TelemetryProviders>
       <LayoutTopDiv>
-        {showStagingIndicator && (
-          <span
-            title="Staging environment"
-            className="absolute right-0 mx-1.5 h-1.5 w-1.5 rounded-full"
-            style={{
-              backgroundColor: "var(--vscode-list-warningForeground)",
-            }}
-          />
-        )}
-        <OSRContextMenu />
         <div
           style={{
-            scrollbarGutter: "stable both-edges",
-            minHeight: "100%",
-            display: "grid",
-            gridTemplateRows: "1fr auto",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <TextDialog
-            showDialog={showDialog}
-            onEnter={() => {
-              dispatch(setShowDialog(false));
-            }}
-            onClose={() => {
-              dispatch(setShowDialog(false));
-            }}
-            message={dialogMessage}
-          />
+          {isInitialLoading ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <RingLoader size={40} />
+            </div>
+          ) : !session && loginRequired ? (
+            <Login
+              loginAction={() => login(false)}
+              onLogin={() => {
+                // 登录成功后的逻辑
+              }}
+            />
+          ) : (
+            <>
+              {showStagingIndicator && (
+                <span
+                  title="Staging environment"
+                  className="absolute right-0 mx-1.5 h-1.5 w-1.5 rounded-full"
+                  style={{
+                    backgroundColor: "var(--vscode-list-warningForeground)",
+                  }}
+                />
+              )}
+              <OSRContextMenu />
+              <TextDialog
+                showDialog={showDialog}
+                onEnter={() => {
+                  dispatch(setShowDialog(false));
+                }}
+                onClose={() => {
+                  dispatch(setShowDialog(false));
+                }}
+                message={dialogMessage}
+              />
 
-          <GridDiv>
-            <PostHogPageView />
-            <Outlet />
-            {/* The fatal error for chat is shown below input */}
-            {!isHome && <FatalErrorIndicator />}
-          </GridDiv>
+              <GridDiv>
+                <PostHogPageView />
+                <Outlet />
+                {/* The fatal error for chat is shown below input */}
+                {!isHome && <FatalErrorIndicator />}
+              </GridDiv>
+            </>
+          )}
         </div>
         <div style={{ fontSize: fontSize(-4) }} id="tooltip-portal-div" />
       </LayoutTopDiv>

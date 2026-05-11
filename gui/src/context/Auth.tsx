@@ -24,7 +24,9 @@ import { IdeMessengerContext } from "./IdeMessenger";
 interface AuthContextType {
   session: ControlPlaneSessionInfo | undefined;
   isSessionLoading: boolean;
+  isInitialLoading: boolean;
   hasCachedSession: boolean;
+  loginRequired: boolean;
   logout: () => void;
   login: (useOnboarding: boolean) => Promise<boolean>;
   selectedProfile: ProfileDescription | null;
@@ -45,7 +47,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<ControlPlaneSessionInfo | undefined>(
     undefined,
   );
-  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [hasCachedSession, setHasCachedSession] = useState<boolean>(() => {
     try {
       return window.localStorage.getItem(AUTH_SESSION_CACHE_KEY) === "1";
@@ -53,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return false;
     }
   });
+  const [loginRequired, setLoginRequired] = useState(true);
 
   // Orgs
   const orgs = useAppSelector((store) => store.profiles.organizations);
@@ -102,37 +106,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
-    ideMessenger.post("logoutOfControlPlane", undefined);
-    dispatch(setOrganizations(orgs.filter((org) => org.id === "personal")));
-    dispatch(setSelectedOrgId("personal"));
-    setSession(undefined);
-    setSessionCache(false);
-    setIsSessionLoading(false);
+    React.startTransition(() => {
+      ideMessenger.post("logoutOfControlPlane", undefined);
+      dispatch(setOrganizations(orgs.filter((org) => org.id === "personal")));
+      dispatch(setSelectedOrgId("personal"));
+      setSession(undefined);
+      setSessionCache(false);
+      setIsSessionLoading(false);
+    });
   };
 
   useEffect(() => {
     async function init() {
-      setIsSessionLoading(true);
+      setIsInitialLoading(true);
       try {
-        const result = await ideMessenger.request(
-          "getControlPlaneSessionInfo",
-          {
+        const [sessionResult, envResult] = await Promise.all([
+          ideMessenger.request("getControlPlaneSessionInfo", {
             silent: true,
             useOnboarding: false,
-          },
-        );
-        if (result.status === "success") {
-          setSession(result.content);
-          setSessionCache(Boolean(result.content));
+          }),
+          ideMessenger.request("controlPlane/getEnvironment", undefined),
+        ]);
+
+        if (sessionResult.status === "success") {
+          setSession(sessionResult.content);
+          setSessionCache(Boolean(sessionResult.content));
         } else {
           setSession(undefined);
           setSessionCache(false);
+        }
+
+        if (envResult.status === "success") {
+          setLoginRequired(envResult.content.LOGIN_REQUIRED ?? true);
         }
       } catch {
         setSession(undefined);
         setSessionCache(false);
       } finally {
-        setIsSessionLoading(false);
+        setIsInitialLoading(false);
       }
     }
     void init();
@@ -141,9 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useWebviewListener(
     "sessionUpdate",
     async (data) => {
-      setSession(data.sessionInfo);
-      setSessionCache(Boolean(data.sessionInfo));
-      setIsSessionLoading(false);
+      React.startTransition(() => {
+        setSession(data.sessionInfo);
+        setSessionCache(Boolean(data.sessionInfo));
+        setIsInitialLoading(false);
+        setIsSessionLoading(false);
+      });
     },
     [],
   );
@@ -171,7 +185,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         session,
         isSessionLoading,
+        isInitialLoading,
         hasCachedSession,
+        loginRequired,
         logout,
         login,
         selectedProfile,

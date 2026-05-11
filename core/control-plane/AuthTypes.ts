@@ -25,16 +25,6 @@ export enum AuthType {
   OnPrem = "on-prem",
 }
 
-export interface CustomAuthConfig {
-  LOGIN_URL: string;
-  USER_INFO_URL: string;
-  SITE_CODE: string;
-  SITE_NAME: string;
-  LOCAL_SERVER_HOST: string;
-  LOCAL_SERVER_PORT: number;
-  LOCAL_SERVER_CALLBACK_PATH: string;
-}
-
 export interface HubEnv {
   DEFAULT_CONTROL_PLANE_PROXY_URL: string;
   CONTROL_PLANE_URL: string;
@@ -42,7 +32,7 @@ export interface HubEnv {
   WORKOS_CLIENT_ID: string;
   WORKOS_URL?: string;
   APP_URL: string;
-  customAuthConfig: CustomAuthConfig;
+  LOGIN_REQUIRED?: boolean;
 }
 
 export interface OnPremEnv {
@@ -50,10 +40,10 @@ export interface OnPremEnv {
   DEFAULT_CONTROL_PLANE_PROXY_URL: string;
   CONTROL_PLANE_URL: string;
   APP_URL: string;
-  customAuthConfig: CustomAuthConfig;
   KEYCLOAK_URL?: string;
   KEYCLOAK_REALM?: string;
   KEYCLOAK_CLIENT_ID?: string;
+  LOGIN_REQUIRED?: boolean;
 }
 
 export type ControlPlaneEnv = HubEnv | OnPremEnv;

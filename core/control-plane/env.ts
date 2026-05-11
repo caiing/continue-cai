@@ -1,23 +1,16 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
+import * as YAML from "yaml";
 import { IdeSettings } from "..";
 import {
+  getContinueGlobalPath,
   getLocalEnvironmentDotFilePath,
   getStagingEnvironmentDotFilePath,
 } from "../util/paths";
-import { AuthType, ControlPlaneEnv, CustomAuthConfig } from "./AuthTypes";
+import { AuthType, ControlPlaneEnv } from "./AuthTypes";
 import { getLicenseKeyData } from "./mdm/mdm";
 
 export const EXTENSION_NAME = "continue";
-
-const DEFAULT_CUSTOM_AUTH_CONFIG: CustomAuthConfig = {
-  LOGIN_URL: "http://127.0.0.1:5500/login_simulation.html",
-  USER_INFO_URL: "http://127.0.0.1:5500/getUserInfo",
-  SITE_CODE: "http://127.0.0.1:5500/",
-  SITE_NAME: "f-taas",
-  LOCAL_SERVER_HOST: "127.0.0.1",
-  LOCAL_SERVER_PORT: 34567,
-  LOCAL_SERVER_CALLBACK_PATH: "/callback",
-};
 
 const WORKOS_CLIENT_ID_PRODUCTION = "client_01J0FW6XN8N2XJAECF7NE0Y65J";
 const WORKOS_CLIENT_ID_STAGING = "client_01J0FW6XCPMJMQ3CG51RB4HBZQ";
@@ -28,7 +21,6 @@ const PRODUCTION_HUB_ENV: ControlPlaneEnv = {
   AUTH_TYPE: AuthType.WorkOsProd,
   WORKOS_CLIENT_ID: WORKOS_CLIENT_ID_PRODUCTION,
   APP_URL: "https://continue.dev/",
-  customAuthConfig: DEFAULT_CUSTOM_AUTH_CONFIG,
 };
 
 const STAGING_ENV: ControlPlaneEnv = {
@@ -37,7 +29,6 @@ const STAGING_ENV: ControlPlaneEnv = {
   AUTH_TYPE: AuthType.WorkOsStaging,
   WORKOS_CLIENT_ID: WORKOS_CLIENT_ID_STAGING,
   APP_URL: "https://hub.continue-stage.tools/",
-  customAuthConfig: DEFAULT_CUSTOM_AUTH_CONFIG,
 };
 
 const TEST_ENV: ControlPlaneEnv = {
@@ -46,7 +37,6 @@ const TEST_ENV: ControlPlaneEnv = {
   AUTH_TYPE: AuthType.WorkOsStaging,
   WORKOS_CLIENT_ID: WORKOS_CLIENT_ID_STAGING,
   APP_URL: "https://app-test.continue.dev/",
-  customAuthConfig: DEFAULT_CUSTOM_AUTH_CONFIG,
 };
 
 const LOCAL_ENV: ControlPlaneEnv = {
@@ -55,7 +45,6 @@ const LOCAL_ENV: ControlPlaneEnv = {
   AUTH_TYPE: AuthType.WorkOsStaging,
   WORKOS_CLIENT_ID: WORKOS_CLIENT_ID_STAGING,
   APP_URL: "http://localhost:3000/",
-  customAuthConfig: DEFAULT_CUSTOM_AUTH_CONFIG,
 };
 
 export async function enableHubContinueDev() {
@@ -72,26 +61,57 @@ export async function getControlPlaneEnv(
 export function getControlPlaneEnvSync(
   ideTestEnvironment: IdeSettings["continueTestEnvironment"],
 ): ControlPlaneEnv {
+  // 从 config.yaml 中读取控制面配置的辅助函数
+  const getControlPlaneFromYaml = (): any => {
+    try {
+      const configPath = path.join(getContinueGlobalPath(), "config.yaml");
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, "utf8");
+        const parsed = YAML.parse(content);
+        return parsed?.controlPlane || {};
+      }
+    } catch (e) {
+      console.warn("Failed to parse config.yaml for controlPlane:", e);
+    }
+    return {};
+  };
+
+  const fillEnvFields = (controlPlaneEnv: ControlPlaneEnv): ControlPlaneEnv => {
+    const proxyUrl = controlPlaneEnv.DEFAULT_CONTROL_PLANE_PROXY_URL;
+    const yamlConfig = getControlPlaneFromYaml();
+
+    return {
+      ...controlPlaneEnv,
+      // 字段合并优先级：环境变量 > config.yaml > 默认值/基于 proxyUrl 的生成
+      APP_URL:
+        process.env.APP_URL || yamlConfig.appUrl || controlPlaneEnv.APP_URL,
+      LOGIN_REQUIRED:
+        yamlConfig.loginRequired !== undefined
+          ? yamlConfig.loginRequired
+          : (controlPlaneEnv.LOGIN_REQUIRED ?? true),
+    };
+  };
+
   // MDM override
   const licenseKeyData = getLicenseKeyData();
   if (licenseKeyData?.unsignedData?.apiUrl) {
     const { apiUrl } = licenseKeyData.unsignedData;
-    return {
-      AUTH_TYPE: AuthType.OnPrem,
+    const controlPlaneEnv = {
+      AUTH_TYPE: AuthType.OnPrem as const,
       DEFAULT_CONTROL_PLANE_PROXY_URL: apiUrl,
       CONTROL_PLANE_URL: apiUrl,
       APP_URL: "https://continue.dev/",
-      customAuthConfig: DEFAULT_CUSTOM_AUTH_CONFIG,
     };
+    return fillEnvFields(controlPlaneEnv);
   }
 
   // Note .local overrides .staging
   if (fs.existsSync(getLocalEnvironmentDotFilePath())) {
-    return LOCAL_ENV;
+    return fillEnvFields(LOCAL_ENV);
   }
 
   if (fs.existsSync(getStagingEnvironmentDotFilePath())) {
-    return STAGING_ENV;
+    return fillEnvFields(STAGING_ENV);
   }
 
   const env =
@@ -112,22 +132,7 @@ export function getControlPlaneEnvSync(
           ? TEST_ENV
           : PRODUCTION_HUB_ENV;
 
-  const mergedCustomAuthConfig: CustomAuthConfig = {
-    ...DEFAULT_CUSTOM_AUTH_CONFIG,
-    ...(controlPlaneEnv.customAuthConfig || {}),
-    LOGIN_URL: process.env.LOGIN_URL || controlPlaneEnv.customAuthConfig?.LOGIN_URL || DEFAULT_CUSTOM_AUTH_CONFIG.LOGIN_URL,
-    USER_INFO_URL: process.env.USER_INFO_URL || controlPlaneEnv.customAuthConfig?.USER_INFO_URL || DEFAULT_CUSTOM_AUTH_CONFIG.USER_INFO_URL,
-    SITE_CODE: process.env.SITE_CODE || controlPlaneEnv.customAuthConfig?.SITE_CODE || DEFAULT_CUSTOM_AUTH_CONFIG.SITE_CODE,
-    SITE_NAME: process.env.SITE_NAME || controlPlaneEnv.customAuthConfig?.SITE_NAME || DEFAULT_CUSTOM_AUTH_CONFIG.SITE_NAME,
-    LOCAL_SERVER_HOST: process.env.LOCAL_SERVER_HOST || controlPlaneEnv.customAuthConfig?.LOCAL_SERVER_HOST || DEFAULT_CUSTOM_AUTH_CONFIG.LOCAL_SERVER_HOST,
-    LOCAL_SERVER_PORT: process.env.LOCAL_SERVER_PORT ? parseInt(process.env.LOCAL_SERVER_PORT) : (controlPlaneEnv.customAuthConfig?.LOCAL_SERVER_PORT || DEFAULT_CUSTOM_AUTH_CONFIG.LOCAL_SERVER_PORT),
-    LOCAL_SERVER_CALLBACK_PATH: process.env.LOCAL_SERVER_CALLBACK_PATH || controlPlaneEnv.customAuthConfig?.LOCAL_SERVER_CALLBACK_PATH || DEFAULT_CUSTOM_AUTH_CONFIG.LOCAL_SERVER_CALLBACK_PATH,
-  };
-
-  return {
-    ...controlPlaneEnv,
-    customAuthConfig: mergedCustomAuthConfig,
-  };
+  return fillEnvFields(controlPlaneEnv);
 }
 
 export async function useHub(
