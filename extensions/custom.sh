@@ -171,10 +171,14 @@ $xsed 's# left/right border#左/右边界#g' ${baseDir}/../gui/src/pages/config/
 # 简化 session 按钮的文本
 $xsed 's#<span className="text-2xs">Log out</span>#<span className="text-2xs">登出</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<span className="text-2xs">Log in</span>#<span className="text-2xs">登录</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#Log in#登录#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 # $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 # $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<span className="text-2xs">Reload</span>#<span className="text-2xs">重新加载</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#"Config refreshed"#"配置已刷新"#g' ${baseDir}/../gui/src/context/Auth.tsx
+$xsed 's#"Failed to refresh config"#"刷新配置失败"#g' ${baseDir}/../gui/src/context/Auth.tsx
+$xsed 's#useAuth must be used within an AuthProvider#useAuth 必须在 AuthProvider 中使用#g' ${baseDir}/../gui/src/context/Auth.tsx
 
 $xsed 's#View errors#查看错误#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/AssistantOption.tsx
 $xsed 's#"Ask anything, #"询问任何事情，#g' ${baseDir}/../gui/src/components/mainInput/TipTapEditor/utils/editorConfig.ts
