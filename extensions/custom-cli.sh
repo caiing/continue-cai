@@ -241,22 +241,22 @@ $xsed 's#"Special Characters:"#"特殊字符："#g' ${baseDir}/cli/src/slashComm
 $xsed 's#"Available Commands:"#"可用命令："#g' ${baseDir}/cli/src/slashCommands.ts
 
 # 键盘快捷键描述
-$xsed 's#"Navigate command/file suggestions or history"#"导航命令/文件建议或历史"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Complete command or file selection"#"完成命令或文件选择"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Submit message"#"提交消息"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"New line"#"新行"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Line continuation (at end of line)"#"行继续（在行末）"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Shell mode - run shell commands"#"Shell 模式 - 运行 shell 命令"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Clear input"#"清除输入"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Exit application"#"退出应用"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Clear screen"#"清屏"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Cycle permission modes (normal/plan/auto)"#"循环权限模式（正常/计划/自动）"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Cancel streaming or close suggestions"#"取消流式传输或关闭建议"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Search and attach files for context"#"搜索并附加文件作为上下文"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Access slash commands"#"访问斜杠命令"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Execute bash commands directly"#"直接执行 bash 命令"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Type ${chalk.cyan("/")} to see available slash commands"#"输入 ${chalk.cyan("/")} 查看可用的斜杠命令"#g' ${baseDir}/cli/src/slashCommands.ts
-$xsed 's#"Type ${chalk.cyan("!")} followed by a command to execute bash directly"#"输入 ${chalk.cyan("!")} 后跟命令直接执行 bash"#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Navigate command/file suggestions or history#导航命令/文件建议或历史#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Complete command or file selection#完成命令或文件选择#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Submit message#提交消息#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#New line#新行#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Line continuation (at end of line)#行继续（在行末）#' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Shell mode - run shell commands#Shell 模式 - 运行 shell 命令#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Clear input#清除输入#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Exit application#退出应用#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Clear screen#清屏#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Cycle permission modes (normal/plan/auto)#循环权限模式（正常/计划/自动）#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Cancel streaming or close suggestions#取消流式传输或关闭建议#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Search and attach files for context#搜索并附加文件作为上下文#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Access slash commands#访问斜杠命令#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Execute bash commands directly#直接执行 bash 命令#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Type ${chalk.cyan("/")} to see available slash commands#输入 ${chalk.cyan("/")} 查看可用的斜杠命令#g' ${baseDir}/cli/src/slashCommands.ts
+$xsed 's#Type ${chalk.cyan("!")} followed by a command to execute bash directly#输入 ${chalk.cyan("!")} 后跟命令直接执行 bash#g' ${baseDir}/cli/src/slashCommands.ts
 
 # 登录/登出消息
 $xsed 's#"Login successful! All services updated automatically."#"登录成功！所有服务已自动更新。"#g' ${baseDir}/cli/src/slashCommands.ts
@@ -399,6 +399,27 @@ $xsed 's#"(remote session preview not available)"#"（远程会话预览不可�
 $xsed 's#"(loading...)"#"（加载中...）"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
 $xsed 's#"more sessions above..."#"更多会话在上方..."#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
 $xsed 's#"more sessions below..."#"更多会话在下方..."#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+
+# 翻译 workos.ts 文件
+echo "Translating workos.ts..."
+
+$xsed 's#"Error loading auth config:"#"加载认证配置错误："#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Error saving auth config:"#"保存认证配置错误："#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Failed to refresh auto token"#"自动令牌刷新失败"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Device authorization error:"#"设备授权错误："#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Oops! We had trouble authenticating. Please try again and reach out if the error persists."#"认证时遇到问题，请重试。如果问题持续存在，请联系我们。"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"authorization_pending"#"authorization_pending"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"slow_down"#"slow_down"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"access_denied"#"access_denied"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"expired_token"#"expired_token"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"User denied access"#"用户拒绝访问"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Device code has expired"#"设备代码已过期"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Token polling error:"#"令牌轮询错误："#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Device authorization timeout"#"设备授权超时"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Token refresh error:"#"令牌刷新错误："#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"✅ Success!"#"✅ 成功！"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Using CONTINUE_API_KEY from environment variables, nothing to log out"#"使用环境变量中的 CONTINUE_API_KEY，无需退出登录"#g' ${baseDir}/cli/src/auth/workos.ts
+$xsed 's#"Successfully logged out"#"成功退出登录"#g' ${baseDir}/cli/src/auth/workos.ts
 
 echo "########## CLI UI Translation Complete ##########"
 
