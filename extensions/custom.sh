@@ -25,7 +25,7 @@ $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/src/a
 $xsed 's#欢迎使用 Continue#欢迎使用 分布式编码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#Continue 是您的开源 AI 编程助手。#分布式编码助手是您的开源 AI 编程助手。#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#vscode://continue.continue/login#vscode://roweb.aicoder/login#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
-$xsed 's#//continue.continue/auth#//roweb.aicoder/auth#g' ${baseDir}/../extensions/vscode/src/activation/.ts
+$xsed 's#//continue.continue/auth#//roweb.aicoder/auth#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
 
 echo "########## custom replace begin ########## "
 echo ".continue custom"
@@ -173,7 +173,6 @@ $xsed 's#<span className="text-2xs">Log in</span>#<span className="text-2xs"></s
 $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<span className="text-2xs">Reload</span>#<span className="text-2xs">重新加载</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
-$xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 
 $xsed 's#View errors#查看错误#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/AssistantOption.tsx
