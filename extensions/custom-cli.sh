@@ -324,6 +324,82 @@ $xsed 's#"✓ Config file updated successfully at #"✓ 配置文件已成功更
 $xsed 's#"Invalid choice. Please select \"1\" or \"2\""#"无效选择。请选择 \"1\" 或 \"2\""#g' ${baseDir}/cli/src/onboarding.ts
 $xsed 's#"Failed to load config from \"#"加载配置失败，来自 \"#g' ${baseDir}/cli/src/onboarding.ts
 
+# 翻译 ModelCapabilityWarning.tsx 文件
+echo "Translating ModelCapabilityWarning.tsx..."
+
+$xsed 's#Model Capability Warning#模型能力警告#g' ${baseDir}/cli/src/ui/ModelCapabilityWarning.tsx
+$xsed 's#The model "{modelName}" is not recommended for use with cn due to limited reasoning and tool calling capabilities#模型 "{modelName}" 由于推理和工具调用能力有限，不建议与分布式编码助手一起使用#g' ${baseDir}/cli/src/ui/ModelCapabilityWarning.tsx
+
+# 翻译 UpdateNotification.tsx 文件
+echo "Translating UpdateNotification.tsx..."
+
+$xsed 's#"Continue CLI"#"分布式编码助手 CLI"#g' ${baseDir}/cli/src/ui/UpdateNotification.tsx
+$xsed 's#Remote Mode#远程模式#g' ${baseDir}/cli/src/ui/UpdateNotification.tsx
+
+# 翻译 UpdateSelector.tsx 文件
+echo "Translating UpdateSelector.tsx..."
+
+$xsed 's#"Update Continue CLI"#"更新分布式编码助手 CLI"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Run update"#"运行更新"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Turn off auto-updates"#"关闭自动更新"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Turn on auto-updates"#"开启自动更新"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Back"#"返回"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Update service error"#"更新服务错误"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Update failed"#"更新失败"#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Preparing update..."#"准备更新..."#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+$xsed 's#"Working..."#"处理中..."#g' ${baseDir}/cli/src/ui/UpdateSelector.tsx
+
+# 翻译 ModelSelector.tsx 文件
+echo "Translating ModelSelector.tsx..."
+
+$xsed 's#"Select Model"#"选择模型"#g' ${baseDir}/cli/src/ui/ModelSelector.tsx
+$xsed 's#"No chat models available in the configuration"#"配置中没有可用的聊天模型"#g' ${baseDir}/cli/src/ui/ModelSelector.tsx
+$xsed 's#"Failed to load models"#"加载模型失败"#g' ${baseDir}/cli/src/ui/ModelSelector.tsx
+$xsed 's#"Loading available models..."#"正在加载可用模型..."#g' ${baseDir}/cli/src/ui/ModelSelector.tsx
+
+# 翻译 ConfigSelector.tsx 文件
+echo "Translating ConfigSelector.tsx..."
+
+$xsed 's#"Select Configuration"#"选择配置"#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+$xsed 's#"\[Personal\] Local config.yaml"#"[个人] 本地配置文件"#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+$xsed 's#"Create new assistant"#"创建新助手"#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+$xsed 's#" (opens web)"#"（打开网页）"#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+$xsed 's#"Failed to load configurations"#"加载配置失败"#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+$xsed 's#"Loading configurations..."#"正在加载配置..."#g' ${baseDir}/cli/src/ui/ConfigSelector.tsx
+
+# 翻译 ToolPermissionSelector.tsx 文件
+echo "Translating ToolPermissionSelector.tsx..."
+
+$xsed 's#name: "Continue",#name: "继续",#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's#name: "Continue \\+ don'"'"'t ask again",#name: "继续 + 不再询问",#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's#name: "No, and tell Continue what to do differently",#name: "拒绝，并告知如何改进",#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's#"Would you like to continue?"#"是否继续？"#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+$xsed 's#Note: Dangerous commands will be blocked regardless of your preference.#注意：危险命令将被阻止，与您的偏好无关。#g' ${baseDir}/cli/src/ui/components/ToolPermissionSelector.tsx
+
+# 翻译 ActionStatus.tsx 文件
+echo "Translating ActionStatus.tsx..."
+
+$xsed 's#esc to interrupt#按 esc 中断#g' ${baseDir}/cli/src/ui/components/ActionStatus.tsx
+
+# 翻译 BottomStatusBar.tsx 文件
+echo "Translating BottomStatusBar.tsx..."
+
+$xsed 's#"Press Ctrl+V to paste image"#"按 Ctrl+V 粘贴图片"#g' ${baseDir}/cli/src/ui/components/BottomStatusBar.tsx
+$xsed 's#"ctrl+c to exit"#"按 ctrl+c 退出"#g' ${baseDir}/cli/src/ui/components/BottomStatusBar.tsx
+
+# 翻译 SessionSelector.tsx 文件
+echo "Translating SessionSelector.tsx..."
+
+$xsed 's#"No previous sessions found."#"未找到之前的会话。"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"Start a new conversation with: cn"#"使用 cn 启动新对话"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"Press Esc to exit"#"按 Esc 退出"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"Recent Sessions"#"最近会话"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"Preview"#"预览"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"(remote session preview not available)"#"（远程会话预览不可用）"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"(loading...)"#"（加载中...）"#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"more sessions above..."#"更多会话在上方..."#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+$xsed 's#"more sessions below..."#"更多会话在下方..."#g' ${baseDir}/cli/src/ui/SessionSelector.tsx
+
 echo "########## CLI UI Translation Complete ##########"
 
 echo ".continue directory and logo custom"
