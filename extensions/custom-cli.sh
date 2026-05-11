@@ -417,7 +417,7 @@ $xsed 's#"Org ID:"#"组织 ID："#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Authenticated via environment variable"#"通过环境变量认证"#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Not logged in"#"未登录"#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Configuration:"#"配置："#g' ${baseDir}/cli/src/infoScreen.ts
-$xsed 's#"Using #""#g' ${baseDir}/cli/src/infoScreen.ts
+$xsed 's#Using ${configState\.config\?\.name}#使用 ${configState.config?.name}#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Config not found"#"未找到配置"#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Path:"#"路径："#g' ${baseDir}/cli/src/infoScreen.ts
 $xsed 's#"Model:"#"模型："#g' ${baseDir}/cli/src/infoScreen.ts
