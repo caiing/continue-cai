@@ -181,10 +181,11 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       const value = JSON.parse(data) as ContinueAuthenticationSession[];
 
       // 检查登录状态并通知 VS Code
+      const env = getControlPlaneEnvSync("production");
       void vscode.commands.executeCommand(
         "setContext",
         "continue.isSignedInToControlPlane",
-        value.length > 0,
+        value.length > 0 || !env.LOGIN_REQUIRED,
       );
 
       return value;
@@ -380,10 +381,9 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       }
       loginUrl += "authmanager/continue_login"
     }
-    console.log("loginUrl!!!!:", loginUrl);
     const url = new URL(loginUrl);
     const params = {
-      siteCode: Buffer.from(appUrl).toString("base64"),
+      siteCode: Buffer.from(`${appUrl}#/`).toString("base64"),
       app: Buffer.from("f-taas").toString("base64"),
       callBackUrl: Buffer.from(`${this.redirectUri}?state=${stateId}`).toString(
         "base64",

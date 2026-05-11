@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { CustomScrollbarDiv } from ".";
@@ -30,26 +30,21 @@ const LayoutTopDiv = styled(CustomScrollbarDiv)`
 `;
 
 const GridDiv = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+  overflow-x: visible;
 `;
 
 const Layout = () => {
   const [showStagingIndicator, setShowStagingIndicator] = useState(false);
+  const hasTriggeredAutoLoginRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const onboardingCard = useOnboardingCard();
   const ideMessenger = useContext(IdeMessengerContext);
-  const { session, login, isSessionLoading, isInitialLoading, loginRequired } =
-    useAuth();
-
-  useEffect(() => {
-    if (!isInitialLoading && !session && loginRequired) {
-      void login(false);
-    }
-  }, [isInitialLoading, session, loginRequired, login]);
+  const { session, login, isInitialLoading, loginRequired } = useAuth();
 
   const { mainEditor } = useMainEditor();
   const dialogMessage = useAppSelector((state) => state.ui.dialogMessage);
@@ -237,16 +232,35 @@ const Layout = () => {
     }
   }, [isHome]);
 
+  useEffect(() => {
+    if (isInitialLoading || session || !loginRequired) {
+      return;
+    }
+
+    if (hasTriggeredAutoLoginRef.current) {
+      return;
+    }
+
+    hasTriggeredAutoLoginRef.current = true;
+    void login(false);
+  }, [isInitialLoading, session, loginRequired, login]);
+
   // 如果正在进行初始加载，渲染加载状态以避免黑屏
 
   return (
     <TelemetryProviders>
       <LayoutTopDiv>
         <div
+          // style={{
+          //   height: "100%",
+          //   display: "flex",
+          //   flexDirection: "column",
+          // }}
           style={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
+            scrollbarGutter: "stable both-edges",
+            minHeight: "100%",
+            display: "grid",
+            gridTemplateRows: "1fr auto",
           }}
         >
           {isInitialLoading ? (

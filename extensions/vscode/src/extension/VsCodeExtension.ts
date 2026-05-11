@@ -191,7 +191,8 @@ export class VsCodeExtension {
         resolveWebviewProtocol = resolve;
       },
     );
-    this.ide = new VsCodeIde(this.webviewProtocolPromise, context);
+    const ide = new VsCodeIde(this.webviewProtocolPromise, context);
+    this.ide = ide;
     this.ideUtils = new VsCodeIdeUtils();
 
     // 启动本地登录服务器
@@ -469,6 +470,19 @@ export class VsCodeExtension {
       this.editDecorationManager,
     );
 
+    // Keep title actions visible when login is not required.
+    void (async () => {
+      const env = await getControlPlaneEnv(ide.getIdeSettings());
+      const session = await vscode.authentication.getSession(env.AUTH_TYPE, [], {
+        silent: true,
+      });
+      void vscode.commands.executeCommand(
+        "setContext",
+        "continue.isSignedInToControlPlane",
+        !!session || !env.LOGIN_REQUIRED,
+      );
+    })();
+
     // Disabled due to performance issues
     // registerDebugTracker(this.sidebar.webviewProtocol, this.ide);
 
@@ -595,7 +609,7 @@ export class VsCodeExtension {
 
     // When GitHub sign-in status changes, reload config
     vscode.authentication.onDidChangeSessions(async (e) => {
-      const env = await getControlPlaneEnv(this.ide.getIdeSettings());
+      const env = await getControlPlaneEnv(ide.getIdeSettings());
       if (e.provider.id === env.AUTH_TYPE) {
         const session = await vscode.authentication.getSession(
           env.AUTH_TYPE,
@@ -605,7 +619,7 @@ export class VsCodeExtension {
         void vscode.commands.executeCommand(
           "setContext",
           "continue.isSignedInToControlPlane",
-          !!session,
+          !!session || !env.LOGIN_REQUIRED,
         );
 
         if (session) {

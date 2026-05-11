@@ -49,6 +49,7 @@ export function AssistantAndOrgListbox({
     login,
     organizations,
     refreshProfiles,
+    isSessionLoading,
   } = useAuth();
   const configLoading = useAppSelector((store) => store.config.loading);
   const tinyFont = useFontSize(-4);
@@ -278,7 +279,9 @@ export function AssistantAndOrgListbox({
                   >
                     <div className="flex w-full items-center">
                       <ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />
-                      <span className="text-2xs">Log in</span>
+                      <span className="text-2xs">
+                        {isSessionLoading ? "Logging in..." : "Log in"}
+                      </span>
                     </div>
                   </Button>
                 )}

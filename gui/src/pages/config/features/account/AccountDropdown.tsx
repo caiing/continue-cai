@@ -1,6 +1,6 @@
 import {
   ArrowRightStartOnRectangleIcon,
-  UserCircleIcon as UserCircleIconOutline
+  UserCircleIcon as UserCircleIconOutline,
 } from "@heroicons/react/24/outline";
 import { UserCircleIcon as UserCircleIconSolid } from "@heroicons/react/24/solid";
 import { isOnPremSession } from "core/control-plane/AuthTypes";
@@ -18,7 +18,7 @@ import { useAuth } from "../../../../context/Auth";
 import { IdeMessengerContext } from "../../../../context/IdeMessenger";
 
 export function AccountDropdown() {
-  const { session, logout, login } = useAuth();
+  const { session, logout, login, isSessionLoading } = useAuth();
   const ideMessenger = useContext(IdeMessengerContext);
 
   if (isOnPremSession(session)) {
@@ -27,7 +27,10 @@ export function AccountDropdown() {
 
   if (!session) {
     return (
-      <ToolTip content="Log in" className="text-xs md:!hidden">
+      <ToolTip
+        content={`${isSessionLoading ? "Logging in..." : "Log in"}`}
+        className="text-xs md:!hidden"
+      >
         <Button
           variant="ghost"
           className="text-description flex w-full flex-row items-center gap-2 px-2 py-1.5"
@@ -35,7 +38,7 @@ export function AccountDropdown() {
         >
           <UserCircleIconOutline className="xs:h-4 xs:w-4 h-3 w-3 flex-shrink-0" />
           <span className="text-description hidden text-xs md:block">
-            Log in
+            {isSessionLoading ? "Logging in..." : "Log in"}
           </span>
         </Button>
       </ToolTip>
