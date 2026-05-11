@@ -1,4 +1,5 @@
 import { ConfigHandler } from "core/config/ConfigHandler";
+import { getControlPlaneEnv } from "core/control-plane/env";
 import { DataLogger } from "core/data/log";
 import { EDIT_MODE_STREAM_ID } from "core/edit/constants";
 import {
@@ -790,10 +791,11 @@ export class VsCodeMessenger {
       await Promise.all(
         sessions.map((session) => workOsAuthProvider.removeSession(session.id)),
       );
+      const env = await getControlPlaneEnv(ide.getIdeSettings());
       vscode.commands.executeCommand(
         "setContext",
         "continue.isSignedInToControlPlane",
-        false,
+        !env.LOGIN_REQUIRED,
       );
     });
     this.onWebviewOrCore("saveFile", async (msg) => {

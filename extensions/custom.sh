@@ -24,10 +24,8 @@ $xsed 's#<title>Continue</title>#<title>分布式编码助手</title>#g' ${baseD
 $xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
 $xsed 's#欢迎使用 Continue#欢迎使用 分布式编码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
 $xsed 's#Continue 是您的开源 AI 编程助手。#分布式编码助手是您的开源 AI 编程助手。#g' ${baseDir}/../gui/src/pages/Login/index.tsx
-$xsed 's#Continue 是领先的开源 AI 代码助手#分布式编码助手 是领先的开源 AI 代码助手#g' ${baseDir}/../gui/src/pages/Login/index.tsx
-$xsed 's#Continue#分布式编码助手#g' ${baseDir}/../extensions/vscode/login_simulation.html
 $xsed 's#vscode://continue.continue/login#vscode://roweb.aicoder/login#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
-$xsed 's#//continue.continue/auth#//roweb.aicoder/auth#g' ${baseDir}/../extensions/vscode/src/activation/localServer.ts
+$xsed 's#//continue.continue/auth#//roweb.aicoder/auth#g' ${baseDir}/../extensions/vscode/src/activation/.ts
 
 echo "########## custom replace begin ########## "
 echo ".continue custom"
@@ -175,6 +173,8 @@ $xsed 's#<span className="text-2xs">Log in</span>#<span className="text-2xs"></s
 $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />##g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 $xsed 's#<span className="text-2xs">Reload</span>#<span className="text-2xs">重新加载</span>#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
+$xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/index.tsx
 
 $xsed 's#View errors#查看错误#g' ${baseDir}/../gui/src/components/AssistantAndOrgListbox/AssistantOption.tsx
 $xsed 's#"Ask anything, #"询问任何事情，#g' ${baseDir}/../gui/src/components/mainInput/TipTapEditor/utils/editorConfig.ts
@@ -263,6 +263,7 @@ $xsed 's#label: "Settings",#label: "设置",#g' ${baseDir}/../gui/src/pages/conf
 $xsed 's#label: "Help",#label: "帮助",#g' ${baseDir}/../gui/src/pages/config/configTabs.tsx
 $xsed 's#label: "Settings",#label: "设置",#g' ${baseDir}/../gui/src/pages/config/configTabs.tsx
 $xsed 's#Log in#登录#g' ${baseDir}/../gui/src/pages/config/features/account/AccountDropdown.tsx
+$xsed 's#Logging in...#登录中...#g' ${baseDir}/../gui/src/pages/config/features/account/AccountDropdown.tsx
 $xsed 's#<span>Log out</span>#<span>退出</span>#g' ${baseDir}/../gui/src/pages/config/features/account/AccountDropdown.tsx
 # $xsed '/if (!session) {/,/^  }/d' ${baseDir}/../gui/src/pages/config/features/account/AccountDropdown.tsx
 # $xsed '/const ideMessenger = useContext(IdeMessengerContext);/a\

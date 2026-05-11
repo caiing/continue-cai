@@ -155,7 +155,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       React.startTransition(() => {
         setSession(data.sessionInfo);
         setSessionCache(Boolean(data.sessionInfo));
-        setIsInitialLoading(false);
         setIsSessionLoading(false);
       });
     },
