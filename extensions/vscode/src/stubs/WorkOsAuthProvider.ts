@@ -3,14 +3,15 @@ import { EventEmitter as NodeEventEmitter } from "node:events";
 
 import {
   AuthType,
+  ControlPlaneEnv,
   ControlPlaneSessionInfo,
-  HubEnv,
-  isHubEnv,
+  isHubEnv
 } from "core/control-plane/AuthTypes";
 import { getControlPlaneEnvSync } from "core/control-plane/env";
 import { Logger } from "core/util/Logger";
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
+import * as vscode from "vscode";
 import {
   authentication,
   AuthenticationProvider,
@@ -18,20 +19,16 @@ import {
   AuthenticationSession,
   Disposable,
   env,
-  Event,
   EventEmitter,
   ExtensionContext,
   Uri,
-  window,
+  window
 } from "vscode";
 
+import { LocalLoginServer } from "../activation/localServer";
 import { PromiseAdapter, promiseFromEvent } from "./promiseUtils";
 import { SecretStorage } from "./SecretStorage";
 import { UriEventHandler } from "./uriHandler";
-
-export interface LocalLoginServer {
-  onCodeReceived: Event<{ code: string; state: string }>;
-}
 
 const AUTH_NAME = "Continue";
 
@@ -182,6 +179,14 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       }
 
       const value = JSON.parse(data) as ContinueAuthenticationSession[];
+
+      // 检查登录状态并通知 VS Code
+      void vscode.commands.executeCommand(
+        "setContext",
+        "continue.isSignedInToControlPlane",
+        value.length > 0,
+      );
+
       return value;
     } catch (e: any) {
       // Capture session decrypt and parsing errors to Sentry
@@ -220,12 +225,12 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
 
   public static useOnboardingUri: boolean = false;
   get redirectUri() {
-    // 使用本地服务器端口作为回调地址，支持从 customAuthConfig 环境变量配置获取
-    const authConfig = controlPlaneEnv.customAuthConfig;
-    const host = authConfig.LOCAL_SERVER_HOST;
-    const port = authConfig.LOCAL_SERVER_PORT;
-    const path = authConfig.LOCAL_SERVER_CALLBACK_PATH;
-    return `http://${host}:${port}${path}`;
+    // 使用本地服务器端口作为回调地址
+    const url = new URL(
+      `http://${LocalLoginServer.HOST}:${LocalLoginServer.PORT}`,
+    );
+    url.pathname = LocalLoginServer.CALLBACK_PATH;
+    return url.toString();
   }
 
   public static hasAttemptedRefresh: Promise<void>;
@@ -234,132 +239,6 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     // Disable session refresh, only signal that refresh has been attempted.
     this.attemptEmitter.emit("attempted");
     return;
-  }
-
-  // It is important that every path in this function emits the attempted event
-  // As config loading in core will be locked until refresh is attempted
-  private async _refreshSessions(): Promise<void> {
-    const sessions = await this.getSessions();
-    if (!sessions.length) {
-      this.attemptEmitter.emit("attempted");
-      return;
-    }
-
-    const finalSessions = [];
-    for (const session of sessions) {
-      try {
-        const newSession = await this._refreshSessionWithRetry(
-          session.refreshToken,
-        );
-        finalSessions.push({
-          ...session,
-          accessToken: newSession.accessToken,
-          refreshToken: newSession.refreshToken,
-          expiresInMs: newSession.expiresInMs,
-        });
-      } catch (e: any) {
-        // Capture individual session refresh failures to Sentry
-        Logger.error(e, {
-          context: "workOS_individual_session_refresh",
-          sessionId: session.id,
-        });
-
-        // If refresh fails (after retries for valid tokens), drop the session
-        console.debug(`Error refreshing session token: ${e.message}`);
-        this._sessionChangeEmitter.fire({
-          added: [],
-          removed: [session],
-          changed: [],
-        });
-      }
-    }
-
-    await this.storeSessions(finalSessions);
-    this._sessionChangeEmitter.fire({
-      added: [],
-      removed: [],
-      changed: finalSessions,
-    });
-  }
-
-  private async _refreshSessionWithRetry(
-    refreshToken: string,
-    attempt = 1,
-    baseDelay = 1000,
-  ): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresInMs: number;
-  }> {
-    try {
-      return await this._refreshSession(refreshToken);
-    } catch (error: any) {
-      // Capture token refresh retry errors to Sentry
-      Logger.error(error, {
-        attempt,
-        errorMessage: error.message,
-        isAuthError:
-          error.message?.includes("401") ||
-          error.message?.includes("Invalid refresh token") ||
-          error.message?.includes("Unauthorized"),
-      });
-
-      this.attemptEmitter.emit("attempted");
-      // Don't retry for auth errors
-      if (
-        error.message?.includes("401") ||
-        error.message?.includes("Invalid refresh token") ||
-        error.message?.includes("Unauthorized")
-      ) {
-        throw error;
-      }
-
-      // For network errors or transient server issues, retry with backoff
-      // Calculate exponential backoff delay with jitter
-      const delay = Math.min(
-        baseDelay * Math.pow(2, attempt - 1) * (0.5 + Math.random() * 0.5),
-        0.5 * 60 * 1000, // 0.5 minutes
-      );
-
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          this._refreshSessionWithRetry(refreshToken, attempt + 1, baseDelay)
-            .then(resolve)
-            .catch(reject);
-        }, delay);
-      });
-    } finally {
-      this.attemptEmitter.emit("attempted");
-    }
-  }
-
-  private async _refreshSession(refreshToken: string): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresInMs: number;
-  }> {
-    const response = await fetch(
-      new URL("/auth/refresh", controlPlaneEnv.CONTROL_PLANE_URL),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refreshToken,
-        }),
-      },
-    );
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error("Error refreshing token: " + text);
-    }
-    const data = (await response.json()) as any;
-    return {
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      expiresInMs: this.getExpirationTimeMs(data.accessToken),
-    };
   }
 
   private _formatProfileLabel(
@@ -382,7 +261,8 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       const codeVerifier = generateRandomString(64);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      if (!isHubEnv(controlPlaneEnv)) {
+      // 如果不是 HubEnv，则要求必须配置了 APP_URL 才能登录
+      if (!isHubEnv(controlPlaneEnv) && !controlPlaneEnv.APP_URL) {
         throw new Error("Login is disabled");
       }
 
@@ -474,7 +354,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
    */
   private async login(
     codeChallenge: string,
-    hubEnv: HubEnv,
+    controlPlaneEnv: ControlPlaneEnv,
     scopes: string[] = [],
   ) {
     console.log("AuthProvider: 进入 login 方法");
@@ -484,15 +364,27 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
 
     const scopeString = scopes.join(" ");
 
-    const authConfig = hubEnv.customAuthConfig;
-    console.log("AuthProvider: 获取到 authConfig", authConfig);
-    const loginUrl = authConfig.LOGIN_URL;
-    console.log("AuthProvider: 准备构造 URL:", loginUrl);
+    console.log("AuthProvider: 获取到环境配置", controlPlaneEnv);
+    const appUrl = controlPlaneEnv.APP_URL;
+    if (!appUrl) {
+      console.log("AuthProvider: appUrl 为空，直接返回");
+      return;
+    }
+
+    console.log("AuthProvider: 准备构造 URL:", appUrl);
     console.log("AuthProvider: 准备构造 stateId:", stateId);
+    let loginUrl = appUrl;
+    if (!loginUrl.endsWith(".html")) {
+      if (!loginUrl.endsWith("/")) {
+        loginUrl += "/";
+      }
+      loginUrl += "authmanager/continue_login"
+    }
+    console.log("loginUrl!!!!:", loginUrl);
     const url = new URL(loginUrl);
     const params = {
-      siteCode: Buffer.from(authConfig.SITE_CODE).toString("base64"),
-      app: Buffer.from(authConfig.SITE_NAME).toString("base64"),
+      siteCode: Buffer.from(appUrl).toString("base64"),
+      app: Buffer.from("f-taas").toString("base64"),
       callBackUrl: Buffer.from(`${this.redirectUri}?state=${stateId}`).toString(
         "base64",
       ),
@@ -507,9 +399,8 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       console.log(
         `AuthProvider: 准备调用 env.openExternal: ${oauthUrl.toString()}`,
       );
-      // 使用异步不阻塞的方式打开链接，避免因为用户未授权导致整个登录流死锁
-      env
-        .openExternal(Uri.parse(oauthUrl.toString()))
+      // 使用 Promise.resolve 包装 Thenable，以便使用 .catch 方法
+      Promise.resolve(env.openExternal(Uri.parse(oauthUrl.toString())))
         .then((success) => {
           if (!success) {
             console.error("AuthProvider: 打开外部链接失败");
@@ -526,52 +417,47 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
     }
 
     console.log("AuthProvider: 准备注册回调监听");
-    let codeExchangePromise = this._codeExchangePromises.get(scopeString);
-    if (!codeExchangePromise) {
-      if (this._localLoginServer) {
-        console.log("AuthProvider: 使用本地服务器监听回调");
-        codeExchangePromise = promiseFromEvent(
-          this._localLoginServer.onCodeReceived,
-          async (data, resolve, reject) => {
-            if (this._pendingStates.some((n) => n === data.state)) {
-              resolve(data.code);
-            } else {
-              reject(new Error("State not found"));
-            }
-          },
-        );
-      } else {
-        console.log("AuthProvider: 回退使用 URI Handler 监听回调");
-        codeExchangePromise = promiseFromEvent(
-          this._uriHandler.event,
-          this.handleUri(scopes),
-        );
-      }
-      this._codeExchangePromises.set(scopeString, codeExchangePromise);
-    } else {
+    const oldPromise = this._codeExchangePromises.get(scopeString);
+    if (oldPromise) {
       console.log("AuthProvider: 发现旧的 Promise 残留，先取消它");
-      codeExchangePromise.cancel.fire();
-      this._codeExchangePromises.delete(scopeString);
-
-      if (this._localLoginServer) {
-        codeExchangePromise = promiseFromEvent(
-          this._localLoginServer.onCodeReceived,
-          async (data, resolve, reject) => {
-            if (this._pendingStates.some((n) => n === data.state)) {
-              resolve(data.code);
-            } else {
-              reject(new Error("State not found"));
-            }
-          },
-        );
-      } else {
-        codeExchangePromise = promiseFromEvent(
-          this._uriHandler.event,
-          this.handleUri(scopes),
-        );
-      }
-      this._codeExchangePromises.set(scopeString, codeExchangePromise);
+      oldPromise.cancel.fire();
     }
+
+    const uriPromise = promiseFromEvent(
+      this._uriHandler.event,
+      this.handleUri(scopes),
+    );
+
+    let codeExchangePromise: { promise: Promise<string>; cancel: EventEmitter<void> };
+
+    if (this._localLoginServer) {
+      console.log("AuthProvider: 同时开启本地服务器和 URI Handler 监听回调");
+      const localPromise = promiseFromEvent<{ code: string; state: string }, string>(
+        this._localLoginServer.onCodeReceived,
+        async (data, resolve, reject) => {
+          if (this._pendingStates.some((n) => n === data.state)) {
+            resolve(data.code);
+          } else {
+            reject(new Error("State not found"));
+          }
+        },
+      );
+
+      const combinedCancel = new EventEmitter<void>();
+      codeExchangePromise = {
+        promise: Promise.race([uriPromise.promise, localPromise.promise]),
+        cancel: combinedCancel,
+      };
+
+      combinedCancel.event(() => {
+        uriPromise.cancel.fire();
+        localPromise.cancel.fire();
+      });
+    } else {
+      console.log("AuthProvider: 使用 URI Handler 监听回调");
+      codeExchangePromise = uriPromise;
+    }
+    this._codeExchangePromises.set(scopeString, codeExchangePromise);
 
     console.log("AuthProvider: 开始等待 Promise.race，设置超时机制");
     try {
@@ -632,7 +518,7 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
   private async getUserInfo(
     token: string,
     codeVerifier: string,
-    hubEnv: HubEnv,
+    controlPlaneEnv: ControlPlaneEnv,
   ) {
     // 模拟原理：如果 token 是以 "sim_" 开头的模拟授权码，直接返回模拟的用户信息。
     // 这避免了向真实的 WorkOS API 发送无效请求，解决了模拟登录时因无法交换 Token 导致的报错。
@@ -648,8 +534,16 @@ export class WorkOsAuthProvider implements AuthenticationProvider, Disposable {
       };
     }
 
-    const userInfoBaseUrl = hubEnv.customAuthConfig.USER_INFO_URL;
-    const resp = await fetch(`${userInfoBaseUrl}${token}`, {
+    const appUrl = controlPlaneEnv.APP_URL;
+    console.log("getUserInfo appUrl:" + appUrl);
+    if (!appUrl) {
+      throw new Error("APP_URL is not configured");
+    }
+    let userInfoUrl = appUrl;
+    if (!userInfoUrl.endsWith("/")) {
+      userInfoUrl += "/";
+    }
+    const resp = await fetch(`${userInfoUrl}authmanager/token/v1/${token}`, {
       method: "get",
       headers: {
         "Content-Type": "application/json",
@@ -666,7 +560,8 @@ export async function getControlPlaneSessionInfo(
   silent: boolean,
   useOnboarding: boolean,
 ): Promise<ControlPlaneSessionInfo | undefined> {
-  if (!isHubEnv(controlPlaneEnv)) {
+  // 如果既不是 HubEnv，也没有配置 APP_URL，则视为 OnPrem 模式
+  if (!isHubEnv(controlPlaneEnv) && !controlPlaneEnv.APP_URL) {
     return {
       AUTH_TYPE: AuthType.OnPrem,
     };

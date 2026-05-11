@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分布式编码助手 - 模拟登录</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e1e1e;
+            color: #cccccc;
+        }
+        .login-container {
+            background-color: #252526;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            width: 380px;
+        }
+        h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #858585;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            background-color: #3c3c3c;
+            border: 1px solid #3c3c3c;
+            color: #cccccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+        .login-button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .login-button:hover {
+            background-color: #0062a3;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #858585;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>分布式编码助手</h2>
+        
+        <div class="form-group">
+            <label for="callback">回调地址 (Redirect URI)</label>
+            <input type="text" id="callback" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="code">模拟授权码 (Code)</label>
+            <input type="text" id="code">
+        </div>
+
+        <button class="login-button" onclick="handleLogin()">确认登录</button>
+        
+        <div class="info">
+            调试模式：参数已从 URL 自动解析
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时自动解析参数
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const state = urlParams.get('state');
+            const callBackUrlBase64 = urlParams.get('callBackUrl');
+            
+            if (state) {
+                document.getElementById('state').value = state;
+            }
+
+            if (callBackUrlBase64) {
+                try {
+                    // 解码回调地址
+                    const callBackUrl = atob(callBackUrlBase64);
+                    document.getElementById('callback').value = callBackUrl;
+                } catch (e) {
+                    console.error('回调地址解码失败:', e);
+                }
+            }
+
+            // 随机生成一个 code
+            const mockCode = 'sim_auth_code_' + Math.random().toString(36).substring(7);
+            document.getElementById('code').value = mockCode;
+        };
+
+        function handleLogin() {
+            const callback = document.getElementById('callback').value;
+            const code = document.getElementById('code').value;
+            
+            if (!callback || !code) {
+                alert('缺少必要的登录参数');
+                return;
+            }
+
+            // 构造最终的重定向地址
+            // 注意：AuthProvider 传过来的 callback 已经包含了 state
+            const finalRedirectUrl = `${callback}&code=${code}`;
+
+            console.log('正在跳转回 VS Code:', finalRedirectUrl);
+            window.location.href = finalRedirectUrl;
+        }
+    </script>
+</body>
+</html>

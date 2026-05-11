@@ -1,6 +1,6 @@
+import { ControlPlaneEnv } from "core/control-plane/AuthTypes";
 import * as http from "http";
 import * as vscode from "vscode";
-import { CustomAuthConfig } from "core/control-plane/AuthTypes";
 import { getvsCodeUriScheme } from "../util/util";
 
 /**
@@ -11,6 +11,10 @@ import { getvsCodeUriScheme } from "../util/util";
  * 2. 作为一个 OAuth 回调的中转站，捕获浏览器返回的授权码 (code) 并通过事件机制直接传递给插件内部，避免复杂的协议跳转。
  */
 export class LocalLoginServer {
+  public static readonly HOST = "127.0.0.1";
+  public static readonly PORT = 34567;
+  public static readonly CALLBACK_PATH = "/callback";
+
   /**
    * HTTP 服务器实例
    */
@@ -41,15 +45,15 @@ export class LocalLoginServer {
   /**
    * 构造函数
    * @param context 扩展上下文，用于访问 VS Code 的全局 API 和订阅管理。
-   * @param config 可选的配置项，用于自定义服务器的主机、端口和路径。
+   * @param env 当前的控制面环境配置。
    */
   constructor(
     private readonly context: vscode.ExtensionContext,
-    config?: CustomAuthConfig
+    private readonly env: ControlPlaneEnv,
   ) {
-    this.host = config ? config.LOCAL_SERVER_HOST : '127.0.0.1';
-    this.port = config ? config.LOCAL_SERVER_PORT : 34567;
-    this.callbackPath = config ? config.LOCAL_SERVER_CALLBACK_PATH : '/callback';
+    this.host = LocalLoginServer.HOST;
+    this.port = LocalLoginServer.PORT;
+    this.callbackPath = LocalLoginServer.CALLBACK_PATH;
   }
 
   /**
@@ -92,20 +96,25 @@ export class LocalLoginServer {
    * @param res HTTP 响应对象
    */
   private async handleRoot(res: http.ServerResponse) {
-    const controlPlaneEnv = getControlPlaneEnvSync();
+    const controlPlaneEnv = this.env;
+    const scheme = getvsCodeUriScheme();
+    const extensionId = this.context.extension.id;
     // 尝试静默获取当前会话，不弹出 UI
-    const session = await vscode.authentication.getSession(controlPlaneEnv.AUTH_TYPE, [], { silent: true });
-    
+    const session = await vscode.authentication.getSession(
+      controlPlaneEnv.AUTH_TYPE,
+      [],
+      { silent: true },
+    );
+
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    
+
     if (session) {
       // 已登录状态页面
       res.end(`
         <html>
           <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #1e1e1e; color: #ccc;">
-            <h1>当前用户: ${session.account.label}</h1>
-            <p>您已成功登录 Continue。</p>
-            <button onclick="window.close()" style="margin-top: 20px; padding: 10px 20px; cursor: pointer;">关闭页面</button>
+            <h1>${session.account.label}</h1>
+            <p>您已成功登录</p>
           </body>
         </html>
       `);
@@ -172,20 +181,17 @@ export class LocalLoginServer {
         </head>
         <body>
           <div class="container">
-            <img class="logo" src="https://raw.githubusercontent.com/continuedev/continue/main/extensions/vscode/media/icon.png" alt="Logo">
             <div class="intro">
               <h2>欢迎使用 Continue</h2>
               <p>Continue 是一个领先的开源 AI 代码助手，可以帮助你加速开发流程、自动生成代码并回答技术问题。</p>
             </div>
-            // <a href="javascript:void(0)" class="login-btn" onclick="showProgress()">立即登录</a>
-            // <div id="progress" class="progress">正在跳转至 VS Code 启动登录进程...</div>
-          </div>
+           </div>
           <script>
             function showProgress() {
               document.getElementById('progress').style.display = 'block';
               // 原理：通过 URI Scheme (vscode://...) 唤起 VS Code 内部已注册的命令或逻辑，
               // 这会触发 WorkOsAuthProvider 的 createSession 方法。
-              window.location.href = 'vscode://continue.continue/login';
+              window.location.href = '${scheme}://${extensionId}/login';
             }
           </script>
         </body>
@@ -218,22 +224,20 @@ export class LocalLoginServer {
     this._onCodeReceived.fire({ code, state });
 
     const scheme = getvsCodeUriScheme();
-    const vscodeRedirectUrl = `${scheme}://continue.continue/auth?code=${code}&state=${state}`;
+    const extensionId = this.context.extension.id;
+    const vscodeRedirectUrl = `${scheme}://${extensionId}/auth?code=${code}&state=${state}`;
 
     // 向浏览器返回响应界面
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(`
       <html>
         <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #1e1e1e; color: #ccc;">
-          <h1>登录成功！</h1>··
-          <p>正在为您跳转回 VS Code 编辑器...</p>
+          <h1>登录成功！</h1>
+          <p>正在为您跳转回编辑器...</p>
           <p style="font-size: 0.8em; color: #888;">如果浏览器没有自动跳转，请手动返回。</p>
           <script>
             // 原理：通过 URI Scheme 唤起 VS Code，这会强制操作系统将焦点切换回编辑器
             window.location.href = "${vscodeRedirectUrl}";
-            
-            // 兜底逻辑：3 秒后尝试关闭窗口
-            //setTimeout(() => { window.close(); }, 3000);
           </script>
         </body>
       </html>

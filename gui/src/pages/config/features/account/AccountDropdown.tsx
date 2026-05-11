@@ -1,7 +1,6 @@
 import {
   ArrowRightStartOnRectangleIcon,
-  Cog6ToothIcon,
-  UserCircleIcon as UserCircleIconOutline,
+  UserCircleIcon as UserCircleIconOutline
 } from "@heroicons/react/24/outline";
 import { UserCircleIcon as UserCircleIconSolid } from "@heroicons/react/24/solid";
 import { isOnPremSession } from "core/control-plane/AuthTypes";
@@ -80,7 +79,7 @@ export function AccountDropdown() {
                 <Divider />
               </div>
 
-              <ListboxOption
+              {/* <ListboxOption
                 onClick={() =>
                   ideMessenger.post("openUrl", "https://continue.dev/settings")
                 }
@@ -90,7 +89,7 @@ export function AccountDropdown() {
                   <Cog6ToothIcon className="h-3.5 w-3.5" />
                   <span>Manage Account</span>
                 </div>
-              </ListboxOption>
+              </ListboxOption> */}
 
               <ListboxOption onClick={logout} value="logout">
                 <div className="flex items-center gap-2 py-0.5">

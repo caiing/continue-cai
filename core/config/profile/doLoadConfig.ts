@@ -420,9 +420,15 @@ export default async function doLoadConfig(options: {
     controlPlane?.useContinueForTeamsProxy === false && controlPlane?.proxyUrl;
 
   const env = await getControlPlaneEnv(Promise.resolve(ideSettings));
+  // 合并 config.yaml 中的 controlPlane 配置到 env 对象中
+  const mergedEnv = {
+    ...env,
+    ...controlPlane,
+  };
+
   let controlPlaneProxyUrl: string = useOnPremProxy
     ? controlPlane?.proxyUrl
-    : env.DEFAULT_CONTROL_PLANE_PROXY_URL;
+    : mergedEnv.DEFAULT_CONTROL_PLANE_PROXY_URL;
 
   if (!controlPlaneProxyUrl.endsWith("/")) {
     controlPlaneProxyUrl += "/";

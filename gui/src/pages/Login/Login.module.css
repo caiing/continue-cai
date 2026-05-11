@@ -1,6 +1,6 @@
 .container {
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10,9 +10,6 @@
   overflow-y: hidden;
   position: relative;
   box-sizing: border-box;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
 }
 
 .logoWrapper {
@@ -24,17 +21,19 @@
 }
 
 .logo {
-  width: 120px;
+  width: 80px;
+  height: 80px;
 }
 
 @media (max-width: 768px) {
   .logo {
-    width: 80px;
+    width: 60px;
+    height: 60px;
   }
 }
 
 .contentWrapper {
-  margin-top: calc(30px + 120px + 32px); /* top + logo height + spacing */
+  margin-top: calc(30px + 80px + 20px); /* top + logo height + spacing */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -45,15 +44,22 @@
 
 @media (max-width: 768px) {
   .contentWrapper {
-    margin-top: calc(30px + 80px + 24px);
+    margin-top: calc(30px + 60px + 15px);
     padding: 0 5%;
   }
 }
 
+.title {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .description {
-  font-size: 18px;
-  line-height: 1.5;
-  color: var(--vscode-sideBar-foreground);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--vscode-descriptionForeground);
   text-align: center;
   margin: 0;
 }
