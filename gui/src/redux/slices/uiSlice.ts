@@ -32,7 +32,7 @@ type UIState = {
 };
 
 export const DEFAULT_TOOL_SETTING: ToolPolicy = "allowedWithPermission";
-export const DEFAULT_RULE_SETTING: RulePolicy = "on";
+export const DEFAULT_RULE_SETTING: RulePolicy = "off";
 export const DEFAULT_UI_SLICE: UIState = {
   showDialog: false,
   dialogMessage: undefined,
