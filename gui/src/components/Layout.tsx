@@ -233,11 +233,12 @@ const Layout = () => {
   }, [isHome]);
 
   useEffect(() => {
-    if (isInitialLoading || session || !loginRequired) {
+    if (isInitialLoading || hasTriggeredAutoLoginRef.current) {
       return;
     }
 
-    if (hasTriggeredAutoLoginRef.current) {
+    if (session || !loginRequired) {
+      hasTriggeredAutoLoginRef.current = true;
       return;
     }
 

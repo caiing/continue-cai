@@ -37,6 +37,11 @@ export class LocalLoginServer {
   }>();
 
   /**
+   * 存储挂起的 HTTP 响应对象，键为 stateId
+   */
+  private _pendingResponses = new Map<string, http.ServerResponse>();
+
+  /**
    * 暴露给外部的只读事件
    * 其他模块通过订阅此事件来获取登录授权码。
    */
@@ -220,25 +225,58 @@ export class LocalLoginServer {
       return;
     }
 
+    // 将响应对象暂存，等待插件完成用户信息获取后再返回结果
+    this._pendingResponses.set(state, res);
+
     // 核心操作：通过 EventEmitter 将捕获到的授权数据直接分发给插件内部监听者
     this._onCodeReceived.fire({ code, state });
 
+    // 设置超时清理，防止内存泄漏（30秒后如果还没调用 finishResponse，则自动返回错误）
+    setTimeout(() => {
+      const pendingRes = this._pendingResponses.get(state);
+      if (pendingRes === res) {
+        this.finishResponse(state, false, "登录请求超时，请重试。");
+      }
+    }, 30000);
+  }
+
+  /**
+   * 结束挂起的 HTTP 响应
+   * @param state 校验标识
+   * @param success 是否成功
+   * @param message 显示的消息内容
+   */
+  public finishResponse(state: string, success: boolean, message?: string) {
+    const res = this._pendingResponses.get(state);
+    if (!res) {
+      return;
+    }
+
+    this._pendingResponses.delete(state);
+
     const scheme = getvsCodeUriScheme();
     const extensionId = this.context.extension.id;
-    const vscodeRedirectUrl = `${scheme}://${extensionId}/auth?code=${code}&state=${state}`;
 
-    // 向浏览器返回响应界面
+    // 如果是成功状态，依然尝试通过 URI Scheme 唤起编辑器
+    let redirectScript = "";
+    if (success) {
+      // 这里的 code 已经在 handleCallback 中通过事件发出了，这里只需要一个占位的 redirectUrl
+      const vscodeRedirectUrl = `${scheme}://${extensionId}/auth?state=${state}`;
+      redirectScript = `
+        <script>
+          window.location.href = "${vscodeRedirectUrl}";
+        </script>
+      `;
+    }
+
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(`
       <html>
         <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #1e1e1e; color: #ccc;">
-          <h1>登录成功！</h1>
-          <p>正在为您跳转回编辑器...</p>
-          <p style="font-size: 0.8em; color: #888;">如果浏览器没有自动跳转，请手动返回。</p>
-          <script>
-            // 原理：通过 URI Scheme 唤起 VS Code，这会强制操作系统将焦点切换回编辑器
-            window.location.href = "${vscodeRedirectUrl}";
-          </script>
+          <h1>${success ? "登录成功！" : "登录失败"}</h1>
+          <p>${message || (success ? "正在为您跳转回编辑器..." : "请检查配置或重试。")}</p>
+          ${success ? '<p style="font-size: 0.8em; color: #888;">如果浏览器没有自动跳转，请手动返回。</p>' : ""}
+          ${redirectScript}
         </body>
       </html>
     `);
@@ -253,5 +291,6 @@ export class LocalLoginServer {
       this.server.close();
       this.server = null;
     }
+    this._pendingResponses.clear();
   }
 }
