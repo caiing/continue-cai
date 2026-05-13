@@ -1,6 +1,8 @@
-import { ControlPlaneEnv } from "core/control-plane/AuthTypes";
 import * as http from "http";
+
+import { ControlPlaneEnv } from "core/control-plane/AuthTypes";
 import * as vscode from "vscode";
+
 import { getvsCodeUriScheme } from "../util/util";
 
 /**
@@ -37,9 +39,12 @@ export class LocalLoginServer {
   }>();
 
   /**
-   * 存储挂起的 HTTP 响应对象，键为 stateId
+   * 存储挂起的 HTTP 响应对象及浏览器信息，键为 stateId
    */
-  private _pendingResponses = new Map<string, http.ServerResponse>();
+  private _pendingResponses = new Map<
+    string,
+    { res: http.ServerResponse; isSimpleBrowser: boolean }
+  >();
 
   /**
    * 暴露给外部的只读事件
@@ -70,27 +75,161 @@ export class LocalLoginServer {
       return;
     }
 
-    this.server = http.createServer(async (req, res) => {
-      // 解析请求的 URL，包括路径和查询参数
-      const url = new URL(req.url || "/", `http://${this.host}:${this.port}`);
-
-      if (url.pathname === "/") {
-        // 根路径逻辑：根据当前登录状态显示不同的引导或欢迎页面
-        this.handleRoot(res);
-      } else if (url.pathname === this.callbackPath) {
-        // 回调路径逻辑：处理从 OAuth 服务重定向回来的包含授权码的请求
-        this.handleCallback(url, res);
-      } else {
-        // 其他路径返回 404
-        res.writeHead(404);
-        res.end("Not Found");
-      }
+    this.server = http.createServer((req, res) => {
+      this.handleRequest(req, res).catch((err) => {
+        console.error("LocalLoginServer error:", err);
+        if (!res.headersSent) {
+          res.writeHead(500);
+          res.end("Internal Server Error");
+        }
+      });
     });
 
     // 启动服务监听
     this.server.listen(this.port, () => {
       console.log(`本地登录服务已启动: http://${this.host}:${this.port}`);
     });
+  }
+
+  /**
+   * 获取通用的页面样式
+   */
+  private getCommonStyles() {
+    const themeKind = vscode.window.activeColorTheme.kind;
+    const isLight =
+      themeKind === vscode.ColorThemeKind.Light ||
+      themeKind === vscode.ColorThemeKind.HighContrastLight;
+
+    const defaults = isLight
+      ? {
+          bg: "#ffffff",
+          fg: "#333333",
+          secondary: "#666666",
+          btnBg: "#007acc",
+          btnHover: "#0062a3",
+          btnFg: "#ffffff",
+          border: "#cecece",
+        }
+      : {
+          bg: "#1e1e1e",
+          fg: "#cccccc",
+          secondary: "#888888",
+          btnBg: "#007acc",
+          btnHover: "#0062a3",
+          btnFg: "#ffffff",
+          border: "#454545",
+        };
+
+    return `
+      :root {
+        --bg-color: var(--vscode-editor-background, ${defaults.bg});
+        --text-color: var(--vscode-editor-foreground, ${defaults.fg});
+        --secondary-text: var(--vscode-descriptionForeground, ${defaults.secondary});
+        --button-bg: var(--vscode-button-background, ${defaults.btnBg});
+        --button-hover: var(--vscode-button-hoverBackground, ${defaults.btnHover});
+        --button-text: var(--vscode-button-foreground, ${defaults.btnFg});
+        --container-bg: var(--vscode-editor-background, ${defaults.bg});
+        --border-color: var(--vscode-panel-border, ${defaults.border});
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+        background-color: var(--bg-color);
+        color: var(--text-color);
+      }
+
+      .card {
+        background-color: var(--container-bg);
+        padding: 40px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+      }
+
+      h1, h2 {
+        margin-top: 0;
+        color: var(--text-color);
+      }
+
+      p {
+        line-height: 1.6;
+        color: var(--text-color);
+      }
+
+      .secondary {
+        color: var(--secondary-text);
+        font-size: 0.9em;
+        margin-top: 20px;
+      }
+
+      .login-btn {
+        display: inline-block;
+        background-color: var(--button-bg);
+        color: var(--button-text) !important;
+        border: none;
+        padding: 12px 32px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.2s, transform 0.1s;
+        margin-top: 20px;
+      }
+
+      .login-btn:hover {
+        background-color: var(--button-hover);
+      }
+
+      .login-btn:active {
+        transform: translateY(1px);
+      }
+
+      .logo-placeholder {
+        width: 64px;
+        height: 64px;
+        background: var(--button-bg);
+        border-radius: 12px;
+        margin-bottom: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 32px;
+      }
+    `;
+  }
+
+  /**
+   * 统一处理所有 HTTP 请求
+   * @param req HTTP 请求对象
+   * @param res HTTP 响应对象
+   */
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) {
+    // 解析请求的 URL，包括路径和查询参数
+    const url = new URL(req.url || "/", `http://${this.host}:${this.port}`);
+
+    if (url.pathname === "/") {
+      // 根路径逻辑：根据当前登录状态显示不同的引导或欢迎页面
+      await this.handleRoot(res);
+    } else if (url.pathname === this.callbackPath) {
+      // 回调路径逻辑：处理从 OAuth 服务重定向回来的包含授权码的请求
+      this.handleCallback(req, url, res);
+    } else {
+      // 其他路径返回 404
+      res.writeHead(404);
+      res.end("Not Found");
+    }
   }
 
   /**
@@ -117,9 +256,16 @@ export class LocalLoginServer {
       // 已登录状态页面
       res.end(`
         <html>
-          <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #1e1e1e; color: #ccc;">
-            <h1>${session.account.label}</h1>
-            <p>您已成功登录</p>
+          <head>
+            <style>${this.getCommonStyles()}</style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="logo-placeholder">Continue</div>
+              <h1>已登录</h1>
+              <p>当前账号: <strong>${session.account.label}</strong></p>
+              <p class="secondary">您现在可以关闭此页面，回到编辑器继续使用。</p>
+            </div>
           </body>
         </html>
       `);
@@ -130,72 +276,27 @@ export class LocalLoginServer {
     res.end(`
       <html>
         <head>
+          <title>Continue</title>
           <style>
-            body {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-              background-color: #1e1e1e;
-              color: #cccccc;
-            }
-            .container {
-              margin-top: 30px; /* 距离顶部约 30 像素 */
-              text-align: center;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              flex-grow: 1;
-            }
-            .logo {
-              width: 80px;
-              height: 80px;
-              margin-bottom: 20px;
-            }
+            ${this.getCommonStyles()}
             .intro {
-              max-width: 400px;
-              line-height: 1.6;
-              margin-bottom: 40px;
-            }
-            .login-btn {
-              background-color: #007acc;
-              color: white;
-              border: none;
-              padding: 12px 24px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 16px;
-              margin-top: auto; /* 使用 flex 布局将按钮推到底部区域 */
-              margin-bottom: 80px;
-              text-decoration: none;
-              transition: background-color 0.2s;
-            }
-            .login-btn:hover {
-              background-color: #0062a3;
-            }
-            .progress {
-              display: none;
-              margin-top: -60px;
-              margin-bottom: 40px;
-              font-size: 14px;
-              color: #888;
+              margin-bottom: 20px;
             }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="card">
+            <div class="logo-placeholder">C</div>
             <div class="intro">
               <h2>欢迎使用 Continue</h2>
-              <p>Continue 是一个领先的开源 AI 代码助手，可以帮助你加速开发流程、自动生成代码并回答技术问题。</p>
+              <p>领先的开源 AI 代码助手，开启您的智能编程之旅。</p>
             </div>
-           </div>
+            <a href="javascript:void(0)" onclick="showProgress()" class="login-btn">立即登录</a>
+            <p id="progress" class="secondary" style="display: none;">正在请求授权...</p>
+          </div>
           <script>
             function showProgress() {
               document.getElementById('progress').style.display = 'block';
-              // 原理：通过 URI Scheme (vscode://...) 唤起 VS Code 内部已注册的命令或逻辑，
-              // 这会触发 WorkOsAuthProvider 的 createSession 方法。
               window.location.href = '${scheme}://${extensionId}/login';
             }
           </script>
@@ -209,12 +310,17 @@ export class LocalLoginServer {
    * 原理：当用户在浏览器完成 OAuth 授权后，浏览器会被重定向到这个本地 URL。
    * 1. 从 URL 查询参数中提取 code（授权码）和 state（安全验证标识）。
    * 2. 校验参数有效性。
-   * 3. 通过 _onCodeReceived.fire 广播该数据。
+   * 3. 通过 _onCodeReceived.fire广播该数据。
    * 4. 向用户返回一个友好的“登录成功”确认页面，并尝试自动关闭浏览器标签页。
+   * @param req HTTP 请求对象
    * @param url 包含 code 和 state 的请求 URL 对象
    * @param res HTTP 响应对象
    */
-  private handleCallback(url: URL, res: http.ServerResponse) {
+  private handleCallback(
+    req: http.IncomingMessage,
+    url: URL,
+    res: http.ServerResponse,
+  ) {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
@@ -225,16 +331,21 @@ export class LocalLoginServer {
       return;
     }
 
+    // 检测是否为 VS Code 环境 (Simple Browser 或 Webview)
+    // VS Code 内置浏览器的 User-Agent 通常包含 "Code" 或 "VSCode"
+    const ua = req.headers["user-agent"] || "";
+    const isInsideVSCode = ua.includes("Code") || ua.includes("VSCode");
+
     // 将响应对象暂存，等待插件完成用户信息获取后再返回结果
-    this._pendingResponses.set(state, res);
+    this._pendingResponses.set(state, { res, isSimpleBrowser: isInsideVSCode });
 
     // 核心操作：通过 EventEmitter 将捕获到的授权数据直接分发给插件内部监听者
     this._onCodeReceived.fire({ code, state });
 
     // 设置超时清理，防止内存泄漏（30秒后如果还没调用 finishResponse，则自动返回错误）
     setTimeout(() => {
-      const pendingRes = this._pendingResponses.get(state);
-      if (pendingRes === res) {
+      const pendingData = this._pendingResponses.get(state);
+      if (pendingData && pendingData.res === res) {
         this.finishResponse(state, false, "登录请求超时，请重试。");
       }
     }, 30000);
@@ -247,11 +358,12 @@ export class LocalLoginServer {
    * @param message 显示的消息内容
    */
   public finishResponse(state: string, success: boolean, message?: string) {
-    const res = this._pendingResponses.get(state);
-    if (!res) {
+    const pendingData = this._pendingResponses.get(state);
+    if (!pendingData) {
       return;
     }
 
+    const { res, isSimpleBrowser } = pendingData;
     this._pendingResponses.delete(state);
 
     const scheme = getvsCodeUriScheme();
@@ -270,13 +382,34 @@ export class LocalLoginServer {
     }
 
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+
+    // 根据是否为内置浏览器定制提示文案
+    const successTitle = success ? "登录成功！" : "登录失败";
+    let successMessage = message;
+    if (!successMessage && success) {
+      successMessage = isSimpleBrowser
+        ? "您可以关闭此标签页并开始使用 Continue。"
+        : "正在为您跳转回编辑器...";
+    }
+    const subMessage =
+      success && !isSimpleBrowser
+        ? "如果浏览器没有自动跳转，请手动返回。"
+        : "";
+
     res.end(`
       <html>
-        <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #1e1e1e; color: #ccc;">
-          <h1>${success ? "登录成功！" : "登录失败"}</h1>
-          <p>${message || (success ? "正在为您跳转回编辑器..." : "请检查配置或重试。")}</p>
-          ${success ? '<p style="font-size: 0.8em; color: #888;">如果浏览器没有自动跳转，请手动返回。</p>' : ""}
-          ${redirectScript}
+        <head>
+          <title>Continue</title>
+          <style>${this.getCommonStyles()}</style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="logo-placeholder">${success ? "✓" : "!"}</div>
+            <h1>${successTitle}</h1>
+            <p>${successMessage || "请检查配置或重试。"}</p>
+            ${subMessage ? `<p class="secondary">${subMessage}</p>` : ""}
+            ${redirectScript}
+          </div>
         </body>
       </html>
     `);

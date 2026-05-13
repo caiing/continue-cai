@@ -116,8 +116,11 @@
                 }
             }
 
-            // 随机生成一个 code
-            const mockCode = 'sim_auth_code_' + Math.random().toString(36).substring(7);
+            // 根据地址判断 code 生成逻辑
+            let mockCode = 'test-code';
+            if (window.location.pathname.endsWith('.html') || window.location.href.includes('.html')) {
+                mockCode = 'sim_auth_code_' + Math.random().toString(36).substring(7);
+            }
             document.getElementById('code').value = mockCode;
         };
 

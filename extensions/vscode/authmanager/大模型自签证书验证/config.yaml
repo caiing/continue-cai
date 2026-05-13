@@ -1,0 +1,20 @@
+name: Local Config
+version: 1.0.0
+schema: v1
+
+# 控制平面配置
+controlPlane:
+  appUrl: "https://localhost:8443"
+
+# 全局请求设置
+# requestOptions:
+#   verifySsl: false # 忽略 HTTPS 证书校验
+
+# 模型配置
+models:
+  - name: "Mock Model"
+    provider: "openai"
+    model: "gpt-4"
+    apiBase: "https://localhost:8443/v1" # 指向你的本地模拟服务
+    requestOptions:
+      verifySsl: false # 因为是本地自签名，需关闭校验
